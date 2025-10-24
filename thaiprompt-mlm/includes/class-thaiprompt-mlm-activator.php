@@ -17,6 +17,9 @@ class Thaiprompt_MLM_Activator {
         // Create default ranks
         self::create_default_ranks();
 
+        // Create required pages
+        self::create_pages();
+
         // Flush rewrite rules
         flush_rewrite_rules();
     }
@@ -274,6 +277,74 @@ class Thaiprompt_MLM_Activator {
 
         foreach ($default_ranks as $rank) {
             $wpdb->insert($table_ranks, $rank);
+        }
+    }
+
+    /**
+     * Create required pages
+     */
+    private static function create_pages() {
+        $pages = array(
+            'mlm_dashboard' => array(
+                'title' => __('MLM Dashboard', 'thaiprompt-mlm'),
+                'content' => '[mlm_dashboard]',
+                'slug' => 'mlm-dashboard'
+            ),
+            'mlm_genealogy' => array(
+                'title' => __('My Genealogy', 'thaiprompt-mlm'),
+                'content' => '[mlm_genealogy]',
+                'slug' => 'mlm-genealogy'
+            ),
+            'mlm_network' => array(
+                'title' => __('My Network', 'thaiprompt-mlm'),
+                'content' => '[mlm_team_stats]<br>[mlm_referral_link]',
+                'slug' => 'mlm-network'
+            ),
+            'mlm_wallet' => array(
+                'title' => __('My Wallet', 'thaiprompt-mlm'),
+                'content' => '[mlm_wallet]',
+                'slug' => 'mlm-wallet'
+            ),
+            'mlm_commissions' => array(
+                'title' => __('My Commissions', 'thaiprompt-mlm'),
+                'content' => '[mlm_commissions]',
+                'slug' => 'mlm-commissions'
+            ),
+            'mlm_rank' => array(
+                'title' => __('My Rank Progress', 'thaiprompt-mlm'),
+                'content' => '[mlm_rank_progress]',
+                'slug' => 'mlm-rank-progress'
+            ),
+            'mlm_leaderboard' => array(
+                'title' => __('Leaderboard', 'thaiprompt-mlm'),
+                'content' => '[mlm_leaderboard]',
+                'slug' => 'mlm-leaderboard'
+            )
+        );
+
+        foreach ($pages as $page_key => $page_data) {
+            // Check if page already exists
+            $page_id = get_option('thaiprompt_mlm_page_' . $page_key);
+
+            if (!$page_id || !get_post($page_id)) {
+                // Create page
+                $new_page = array(
+                    'post_title'    => $page_data['title'],
+                    'post_content'  => $page_data['content'],
+                    'post_status'   => 'publish',
+                    'post_type'     => 'page',
+                    'post_name'     => $page_data['slug'],
+                    'post_author'   => 1,
+                    'comment_status' => 'closed'
+                );
+
+                $page_id = wp_insert_post($new_page);
+
+                if ($page_id) {
+                    // Save page ID
+                    update_option('thaiprompt_mlm_page_' . $page_key, $page_id);
+                }
+            }
         }
     }
 }
