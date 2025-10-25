@@ -2,6 +2,48 @@
 
 All notable changes to Thaiprompt MLM Plugin will be documented in this file.
 
+## [1.5.0] - 2024-01-23
+
+### ✨ New Features - Portal Customization & Rank Management
+
+Major update adding portal customization and complete rank management system.
+
+### Added - Portal Settings
+- ✅ **Portal Logo Upload** - Custom logo for portal header
+- ✅ **Header Text Customization** - Change portal title and subtitle
+- ✅ **Dynamic Subtitle** - Use {name} placeholder for user's name
+- ✅ **Portal Slideshow** - Upload multiple images for dashboard slideshow
+- ✅ **Slideshow Controls** - Configurable speed and navigation
+- ✅ **Image Preview** - See uploaded images in settings
+
+### Added - Rank Management
+- ✅ **Add New Rank** - Complete form for creating new ranks
+- ✅ **Edit Rank** - Modify existing rank settings
+- ✅ **Delete Rank** - Remove ranks with confirmation
+- ✅ **Rank Color Picker** - Visual color selection
+- ✅ **Rank Requirements** - Personal sales, group sales, active legs
+- ✅ **Rank Bonuses** - Percentage bonus and achievement bonus
+- ✅ **Rank Status** - Active/Inactive toggle
+- ✅ **Auto Order** - Automatic rank_order suggestion
+
+### Changed - Portal Template
+- 🔄 **Dynamic Header** - Uses settings for logo and text
+- 🔄 **Slideshow Integration** - Shows slideshow when enabled
+- 🔄 **Responsive Design** - Mobile-friendly slideshow
+
+### Changed - Admin UI
+- 🔄 **Ranks Page** - Completely redesigned with Add/Edit/Delete
+- 🔄 **Settings Page** - Added Portal Settings section
+- 🔄 **Form Validation** - Required fields and data validation
+
+### Technical Details
+- Portal settings stored in wp_options table
+- Logo and slideshow images uploaded via wp_handle_upload()
+- Rank CRUD operations with wpdb
+- Nonce verification for all forms
+- Responsive slideshow with vanilla JavaScript
+- Auto-advance slideshow with configurable speed
+
 ## [1.4.0] - 2024-01-23
 
 ### ✨ New Features - Native Genealogy Tree

@@ -11,6 +11,41 @@ if (!defined('ABSPATH')) {
 if (isset($_POST['thaiprompt_mlm_settings_submit'])) {
     check_admin_referer('thaiprompt_mlm_settings');
 
+    // Handle logo upload
+    $portal_logo = get_option('thaiprompt_mlm_portal_logo', '');
+    if (!empty($_FILES['portal_logo']['name'])) {
+        $upload = wp_handle_upload($_FILES['portal_logo'], array('test_form' => false));
+        if (isset($upload['url'])) {
+            $portal_logo = $upload['url'];
+            update_option('thaiprompt_mlm_portal_logo', $portal_logo);
+        }
+    }
+
+    // Handle slideshow images upload
+    $slideshow_images = get_option('thaiprompt_mlm_portal_slideshow', array());
+    if (!empty($_FILES['slideshow_images']['name'][0])) {
+        $slideshow_images = array();
+        $files = $_FILES['slideshow_images'];
+
+        foreach ($files['name'] as $key => $value) {
+            if ($files['name'][$key]) {
+                $file = array(
+                    'name' => $files['name'][$key],
+                    'type' => $files['type'][$key],
+                    'tmp_name' => $files['tmp_name'][$key],
+                    'error' => $files['error'][$key],
+                    'size' => $files['size'][$key]
+                );
+
+                $upload = wp_handle_upload($file, array('test_form' => false));
+                if (isset($upload['url'])) {
+                    $slideshow_images[] = $upload['url'];
+                }
+            }
+        }
+        update_option('thaiprompt_mlm_portal_slideshow', $slideshow_images);
+    }
+
     $settings = array(
         'placement_type' => sanitize_text_field($_POST['placement_type']),
         'max_level' => intval($_POST['max_level']),
@@ -25,6 +60,10 @@ if (isset($_POST['thaiprompt_mlm_settings_submit'])) {
         'genealogy_animation' => isset($_POST['genealogy_animation']),
         'woocommerce_integration' => isset($_POST['woocommerce_integration']),
         'dokan_integration' => isset($_POST['dokan_integration']),
+        'portal_header_text' => sanitize_text_field($_POST['portal_header_text']),
+        'portal_subtitle_text' => sanitize_text_field($_POST['portal_subtitle_text']),
+        'portal_slideshow_enabled' => isset($_POST['portal_slideshow_enabled']),
+        'portal_slideshow_speed' => intval($_POST['portal_slideshow_speed']),
         'level_commissions' => array()
     );
 
@@ -53,15 +92,23 @@ $defaults = array(
     'genealogy_animation' => true,
     'woocommerce_integration' => true,
     'dokan_integration' => true,
+    'portal_header_text' => 'MLM Portal',
+    'portal_subtitle_text' => 'Welcome back, {name}!',
+    'portal_slideshow_enabled' => false,
+    'portal_slideshow_speed' => 5,
     'level_commissions' => array()
 );
 $settings = wp_parse_args($settings, $defaults);
+
+// Get portal logo and slideshow
+$portal_logo = get_option('thaiprompt_mlm_portal_logo', '');
+$slideshow_images = get_option('thaiprompt_mlm_portal_slideshow', array());
 ?>
 
 <div class="wrap">
     <h1><?php _e('MLM Settings', 'thaiprompt-mlm'); ?></h1>
 
-    <form method="post" action="">
+    <form method="post" action="" enctype="multipart/form-data">
         <?php wp_nonce_field('thaiprompt_mlm_settings'); ?>
 
         <div class="mlm-settings-form">
@@ -211,6 +258,80 @@ $settings = wp_parse_args($settings, $defaults);
                     <input type="text" name="currency" id="currency" value="<?php echo esc_attr($settings['currency']); ?>" maxlength="3">
                     <p class="mlm-form-field-description">
                         <?php _e('Currency code (e.g., THB, USD)', 'thaiprompt-mlm'); ?>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Portal Settings -->
+            <div class="mlm-settings-section">
+                <h2 class="mlm-settings-section-title"><?php _e('Portal Settings', 'thaiprompt-mlm'); ?></h2>
+
+                <div class="mlm-form-field">
+                    <label for="portal_header_text">
+                        <?php _e('Portal Header Text', 'thaiprompt-mlm'); ?>
+                    </label>
+                    <input type="text" name="portal_header_text" id="portal_header_text" value="<?php echo esc_attr($settings['portal_header_text']); ?>" class="regular-text">
+                    <p class="mlm-form-field-description">
+                        <?php _e('Main title shown in portal header', 'thaiprompt-mlm'); ?>
+                    </p>
+                </div>
+
+                <div class="mlm-form-field">
+                    <label for="portal_subtitle_text">
+                        <?php _e('Portal Subtitle Text', 'thaiprompt-mlm'); ?>
+                    </label>
+                    <input type="text" name="portal_subtitle_text" id="portal_subtitle_text" value="<?php echo esc_attr($settings['portal_subtitle_text']); ?>" class="regular-text">
+                    <p class="mlm-form-field-description">
+                        <?php _e('Subtitle text. Use {name} to display user\'s name', 'thaiprompt-mlm'); ?>
+                    </p>
+                </div>
+
+                <div class="mlm-form-field">
+                    <label for="portal_logo">
+                        <?php _e('Portal Logo', 'thaiprompt-mlm'); ?>
+                    </label>
+                    <?php if ($portal_logo): ?>
+                        <div style="margin: 10px 0;">
+                            <img src="<?php echo esc_url($portal_logo); ?>" style="max-width: 200px; height: auto; border: 1px solid #ddd; padding: 5px; background: #fff;">
+                        </div>
+                    <?php endif; ?>
+                    <input type="file" name="portal_logo" id="portal_logo" accept="image/*">
+                    <p class="mlm-form-field-description">
+                        <?php _e('Upload a logo for the portal header (recommended size: 200x60px)', 'thaiprompt-mlm'); ?>
+                    </p>
+                </div>
+
+                <div class="mlm-form-field">
+                    <label>
+                        <input type="checkbox" name="portal_slideshow_enabled" value="1" <?php checked($settings['portal_slideshow_enabled']); ?>>
+                        <?php _e('Enable Portal Slideshow', 'thaiprompt-mlm'); ?>
+                    </label>
+                    <p class="mlm-form-field-description">
+                        <?php _e('Show slideshow in portal dashboard', 'thaiprompt-mlm'); ?>
+                    </p>
+                </div>
+
+                <div class="mlm-form-field">
+                    <label for="portal_slideshow_speed">
+                        <?php _e('Slideshow Speed (seconds)', 'thaiprompt-mlm'); ?>
+                    </label>
+                    <input type="number" name="portal_slideshow_speed" id="portal_slideshow_speed" value="<?php echo esc_attr($settings['portal_slideshow_speed']); ?>" min="1" max="30" style="width: 100px;">
+                </div>
+
+                <div class="mlm-form-field">
+                    <label for="slideshow_images">
+                        <?php _e('Slideshow Images', 'thaiprompt-mlm'); ?>
+                    </label>
+                    <?php if (!empty($slideshow_images)): ?>
+                        <div style="display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;">
+                            <?php foreach ($slideshow_images as $image): ?>
+                                <img src="<?php echo esc_url($image); ?>" style="max-width: 150px; height: auto; border: 1px solid #ddd; padding: 5px; background: #fff;">
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    <input type="file" name="slideshow_images[]" id="slideshow_images" accept="image/*" multiple>
+                    <p class="mlm-form-field-description">
+                        <?php _e('Upload multiple images for the portal slideshow (recommended size: 1200x400px)', 'thaiprompt-mlm'); ?>
                     </p>
                 </div>
             </div>
