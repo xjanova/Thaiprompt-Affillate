@@ -2,6 +2,32 @@
 
 All notable changes to Thaiprompt MLM Plugin will be documented in this file.
 
+## [1.3.0] - 2024-01-22
+
+### ⚠️ BREAKING CHANGES - Portal-Only Focus
+Major cleanup removing all non-portal functionality. Plugin now focuses exclusively on the MLM Portal.
+
+### Removed
+- ❌ **All Shortcodes** - Removed mlm_dashboard, mlm_genealogy, mlm_wallet, mlm_network, etc.
+- ❌ **Old Partial Files** - Removed dashboard.php, genealogy.php, network.php, wallet.php
+- ❌ **Old Public Assets** - Removed thaiprompt-mlm-public.css/js, genealogy.js
+- ❌ **WooCommerce Endpoints** - Removed mlm-dashboard, mlm-network, mlm-wallet
+- ❌ **Auto-Created Pages** - Only creates MLM Portal page now (7 pages removed)
+
+### Kept & Improved
+- ✅ **MLM Portal** - Complete portal with all MLM features
+- ✅ **Portal Assets** - Portal CSS/JS only
+- ✅ **Portal Partials** - commissions.php, rank-progress.php, leaderboard.php
+- ✅ **Core Classes** - All business logic intact
+- ✅ **Admin Interface** - Complete admin panel unchanged
+- ✅ **Integrations** - WooCommerce/Dokan fully functional
+
+### Benefits
+- 🎯 **Focused** - Single portal interface
+- ⚡ **Faster** - No loading unused assets
+- 🧹 **Cleaner** - Removed 1000+ lines of code
+- 🔧 **Maintainable** - Single interface to maintain
+
 ## [1.2.1] - 2024-01-21
 
 ### Fixed

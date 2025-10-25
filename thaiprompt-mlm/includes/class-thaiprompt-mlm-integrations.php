@@ -35,13 +35,10 @@ class Thaiprompt_MLM_Integrations {
         add_action('woocommerce_register_form', array(__CLASS__, 'add_referral_field'));
         add_action('woocommerce_created_customer', array(__CLASS__, 'process_new_customer'));
 
-        // Add MLM tab to My Account
+        // Add MLM Portal to My Account
         add_filter('woocommerce_account_menu_items', array(__CLASS__, 'add_mlm_menu_items'));
         add_action('init', array(__CLASS__, 'add_mlm_endpoints'));
         add_action('woocommerce_account_mlm-portal_endpoint', array(__CLASS__, 'mlm_portal_content'));
-        add_action('woocommerce_account_mlm-dashboard_endpoint', array(__CLASS__, 'mlm_dashboard_content'));
-        add_action('woocommerce_account_mlm-network_endpoint', array(__CLASS__, 'mlm_network_content'));
-        add_action('woocommerce_account_mlm-wallet_endpoint', array(__CLASS__, 'mlm_wallet_content'));
     }
 
     /**
@@ -217,17 +214,11 @@ class Thaiprompt_MLM_Integrations {
     }
 
     /**
-     * Add MLM menu items to My Account
+     * Add MLM Portal to My Account menu
      */
     public static function add_mlm_menu_items($items) {
-        // Get portal page URL
-        $portal_page_id = get_option('thaiprompt_mlm_page_portal');
-
         $mlm_items = array(
-            'mlm-portal' => __('MLM Portal', 'thaiprompt-mlm'),
-            'mlm-dashboard' => __('MLM Dashboard', 'thaiprompt-mlm'),
-            'mlm-network' => __('My Network', 'thaiprompt-mlm'),
-            'mlm-wallet' => __('My Wallet', 'thaiprompt-mlm')
+            'mlm-portal' => __('MLM Portal', 'thaiprompt-mlm')
         );
 
         // Insert before logout
@@ -240,13 +231,10 @@ class Thaiprompt_MLM_Integrations {
     }
 
     /**
-     * Add MLM endpoints
+     * Add MLM Portal endpoint
      */
     public static function add_mlm_endpoints() {
         add_rewrite_endpoint('mlm-portal', EP_ROOT | EP_PAGES);
-        add_rewrite_endpoint('mlm-dashboard', EP_ROOT | EP_PAGES);
-        add_rewrite_endpoint('mlm-network', EP_ROOT | EP_PAGES);
-        add_rewrite_endpoint('mlm-wallet', EP_ROOT | EP_PAGES);
     }
 
     /**
@@ -260,43 +248,6 @@ class Thaiprompt_MLM_Integrations {
         } else {
             echo '<p>' . __('Portal page not found. Please contact administrator.', 'thaiprompt-mlm') . '</p>';
         }
-    }
-
-    /**
-     * MLM Dashboard content
-     */
-    public static function mlm_dashboard_content() {
-        $user_id = get_current_user_id();
-        $position = Thaiprompt_MLM_Network::get_user_position($user_id);
-        $team_stats = Thaiprompt_MLM_Network::get_team_stats($user_id);
-        $wallet_stats = Thaiprompt_MLM_Wallet::get_wallet_stats($user_id);
-        $rank = Thaiprompt_MLM_Database::get_user_rank($user_id);
-        $rank_progress = Thaiprompt_MLM_Rank::get_rank_progress($user_id);
-
-        include THAIPROMPT_MLM_PLUGIN_DIR . 'public/partials/dashboard.php';
-    }
-
-    /**
-     * MLM Network content
-     */
-    public static function mlm_network_content() {
-        $user_id = get_current_user_id();
-        $referrals = Thaiprompt_MLM_Network::get_direct_referrals($user_id);
-        $referral_link = Thaiprompt_MLM_Network::get_referral_link($user_id);
-
-        include THAIPROMPT_MLM_PLUGIN_DIR . 'public/partials/network.php';
-    }
-
-    /**
-     * MLM Wallet content
-     */
-    public static function mlm_wallet_content() {
-        $user_id = get_current_user_id();
-        $wallet = Thaiprompt_MLM_Wallet::get_balance($user_id);
-        $transactions = Thaiprompt_MLM_Wallet::get_transactions($user_id, array('limit' => 20));
-        $withdrawals = Thaiprompt_MLM_Wallet::get_withdrawals($user_id);
-
-        include THAIPROMPT_MLM_PLUGIN_DIR . 'public/partials/wallet.php';
     }
 
     /**

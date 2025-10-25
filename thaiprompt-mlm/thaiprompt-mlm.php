@@ -3,7 +3,7 @@
  * Plugin Name: Thaiprompt MLM
  * Plugin URI: https://thaiprompt.com
  * Description: ระบบจัดการ MLM ครบวงจร พร้อม Genealogy Tree แบบ GSAP, ระบบ Wallet, รองรับ WooCommerce และ Dokan
- * Version: 1.2.1
+ * Version: 1.3.0
  * Author: Thaiprompt
  * Author URI: https://thaiprompt.com
  * License: GPL-2.0+
@@ -22,7 +22,7 @@ if (!defined('WPINC')) {
 /**
  * Plugin version
  */
-define('THAIPROMPT_MLM_VERSION', '1.2.1');
+define('THAIPROMPT_MLM_VERSION', '1.3.0');
 define('THAIPROMPT_MLM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('THAIPROMPT_MLM_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('THAIPROMPT_MLM_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -30,7 +30,7 @@ define('THAIPROMPT_MLM_PLUGIN_BASENAME', plugin_basename(__FILE__));
 /**
  * Database version
  */
-define('THAIPROMPT_MLM_DB_VERSION', '1.2.1');
+define('THAIPROMPT_MLM_DB_VERSION', '1.3.0');
 
 /**
  * Activation hook

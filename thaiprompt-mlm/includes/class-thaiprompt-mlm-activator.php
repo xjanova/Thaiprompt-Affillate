@@ -325,7 +325,7 @@ class Thaiprompt_MLM_Activator {
     }
 
     /**
-     * Create required pages
+     * Create MLM Portal page
      */
     private static function create_pages() {
         $pages = array(
@@ -334,41 +334,6 @@ class Thaiprompt_MLM_Activator {
                 'content' => '',
                 'slug' => 'mlm-portal',
                 'template' => 'mlm-portal-template.php'
-            ),
-            'mlm_dashboard' => array(
-                'title' => __('MLM Dashboard', 'thaiprompt-mlm'),
-                'content' => '[mlm_dashboard]',
-                'slug' => 'mlm-dashboard'
-            ),
-            'mlm_genealogy' => array(
-                'title' => __('My Genealogy', 'thaiprompt-mlm'),
-                'content' => '[mlm_genealogy]',
-                'slug' => 'mlm-genealogy'
-            ),
-            'mlm_network' => array(
-                'title' => __('My Network', 'thaiprompt-mlm'),
-                'content' => '[mlm_team_stats]<br>[mlm_referral_link]',
-                'slug' => 'mlm-network'
-            ),
-            'mlm_wallet' => array(
-                'title' => __('My Wallet', 'thaiprompt-mlm'),
-                'content' => '[mlm_wallet]',
-                'slug' => 'mlm-wallet'
-            ),
-            'mlm_commissions' => array(
-                'title' => __('My Commissions', 'thaiprompt-mlm'),
-                'content' => '[mlm_commissions]',
-                'slug' => 'mlm-commissions'
-            ),
-            'mlm_rank' => array(
-                'title' => __('My Rank Progress', 'thaiprompt-mlm'),
-                'content' => '[mlm_rank_progress]',
-                'slug' => 'mlm-rank-progress'
-            ),
-            'mlm_leaderboard' => array(
-                'title' => __('Leaderboard', 'thaiprompt-mlm'),
-                'content' => '[mlm_leaderboard]',
-                'slug' => 'mlm-leaderboard'
             )
         );
 

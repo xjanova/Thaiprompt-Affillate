@@ -98,7 +98,6 @@ class Thaiprompt_MLM {
 
         $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_styles');
         $this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
-        $this->loader->add_action('init', $plugin_public, 'register_shortcodes');
 
         // Portal template registration
         $this->loader->add_filter('theme_page_templates', $plugin_public, 'register_portal_template');
