@@ -346,23 +346,28 @@ class Thaiprompt_MLM_Rank {
         }
 
         $network_data = Thaiprompt_MLM_Database::get_user_network($user_id);
+
+        // Default values if user is not in network yet
+        $personal_sales = $network_data ? floatval($network_data->personal_sales) : 0;
+        $group_sales = $network_data ? floatval($network_data->group_sales) : 0;
+
         $active_legs = self::count_active_legs($user_id, $next_rank->required_personal_sales);
 
         $requirements_met = array(
             'personal_sales' => array(
                 'required' => floatval($next_rank->required_personal_sales),
-                'current' => floatval($network_data->personal_sales),
-                'met' => $network_data->personal_sales >= $next_rank->required_personal_sales,
+                'current' => $personal_sales,
+                'met' => $personal_sales >= $next_rank->required_personal_sales,
                 'percentage' => $next_rank->required_personal_sales > 0
-                    ? min(100, ($network_data->personal_sales / $next_rank->required_personal_sales) * 100)
+                    ? min(100, ($personal_sales / $next_rank->required_personal_sales) * 100)
                     : 100
             ),
             'group_sales' => array(
                 'required' => floatval($next_rank->required_group_sales),
-                'current' => floatval($network_data->group_sales),
-                'met' => $network_data->group_sales >= $next_rank->required_group_sales,
+                'current' => $group_sales,
+                'met' => $group_sales >= $next_rank->required_group_sales,
                 'percentage' => $next_rank->required_group_sales > 0
-                    ? min(100, ($network_data->group_sales / $next_rank->required_group_sales) * 100)
+                    ? min(100, ($group_sales / $next_rank->required_group_sales) * 100)
                     : 100
             ),
             'active_legs' => array(

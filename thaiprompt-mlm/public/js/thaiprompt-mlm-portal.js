@@ -23,10 +23,13 @@
         setupTabNavigation() {
             const self = this;
 
+            console.log('MLM Portal: Setting up tab navigation, found', $('.mlm-portal-nav-link').length, 'nav links');
+
             $('.mlm-portal-nav-link').on('click', function(e) {
                 e.preventDefault();
 
                 const tab = $(this).data('tab');
+                console.log('MLM Portal: Tab clicked:', tab);
 
                 // Update active state
                 $('.mlm-portal-nav-link').removeClass('active');
@@ -40,16 +43,22 @@
         switchTab(tab) {
             const self = this;
 
-            // Fade out current content
-            $('.mlm-portal-tab-content.active').fadeOut(300, function() {
+            // Fade out all content first
+            $('.mlm-portal-tab-content').fadeOut(200, function() {
                 $(this).removeClass('active');
+            });
 
-                // Fade in new content
-                $('[data-tab-content="' + tab + '"]').fadeIn(400).addClass('active');
+            // After a brief delay, fade in the new content
+            setTimeout(function() {
+                const $newTab = $('[data-tab-content="' + tab + '"]');
+                $newTab.addClass('active').fadeIn(300);
 
                 // Load data for the tab
                 self.loadTabData(tab);
-            });
+
+                // Scroll to top of content
+                $('.mlm-portal-main').animate({ scrollTop: 0 }, 300);
+            }, 250);
 
             this.currentTab = tab;
         }
@@ -329,15 +338,18 @@
 
     // Initialize portal when document is ready
     $(document).ready(function() {
+        console.log('MLM Portal: Initializing...');
+
         if ($('.mlm-portal-wrapper').length) {
+            console.log('MLM Portal: Wrapper found, creating portal instance');
             window.mlmPortal = new MLMPortal();
 
             // Add floating animation keyframe
             const style = $('<style>@keyframes mlm-float { 0%, 100% { transform: translateY(0px) translateX(0px); } 25% { transform: translateY(-20px) translateX(10px); } 50% { transform: translateY(0px) translateX(20px); } 75% { transform: translateY(20px) translateX(10px); } }</style>');
             $('head').append(style);
 
-            // Smooth scroll
-            $('a[href^="#"]').on('click', function(e) {
+            // Smooth scroll for # links (but not for tab links)
+            $('a[href^="#"]:not(.mlm-portal-nav-link)').on('click', function(e) {
                 e.preventDefault();
                 const target = $(this.getAttribute('href'));
                 if (target.length) {
@@ -346,6 +358,8 @@
                     }, 1000);
                 }
             });
+        } else {
+            console.log('MLM Portal: Wrapper not found');
         }
     });
 
