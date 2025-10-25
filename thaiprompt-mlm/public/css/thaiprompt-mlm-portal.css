@@ -1,0 +1,563 @@
+/**
+ * Thaiprompt MLM Portal Styles
+ * Modern Purple Theme with Glassmorphism
+ */
+
+:root {
+    --mlm-portal-primary: #8B5CF6;
+    --mlm-portal-secondary: #A78BFA;
+    --mlm-portal-accent: #EC4899;
+    --mlm-portal-dark: #1F2937;
+    --mlm-portal-darker: #111827;
+    --mlm-portal-light: #F3F4F6;
+    --mlm-portal-white: #FFFFFF;
+    --mlm-portal-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --mlm-portal-gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --mlm-portal-gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --mlm-portal-shadow: 0 20px 60px rgba(139, 92, 246, 0.3);
+    --mlm-portal-shadow-lg: 0 30px 80px rgba(139, 92, 246, 0.4);
+}
+
+/* Portal Container */
+.mlm-portal-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background-size: 400% 400%;
+    animation: mlm-gradient-shift 15s ease infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes mlm-gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Animated Background Particles */
+.mlm-portal-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(167, 139, 250, 0.1) 0%, transparent 50%);
+    animation: mlm-particles-float 20s ease-in-out infinite;
+}
+
+@keyframes mlm-particles-float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+/* Portal Container */
+.mlm-portal-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Portal Header */
+.mlm-portal-header {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 30px 40px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--mlm-portal-shadow);
+    animation: mlm-fade-in-down 0.6s ease;
+}
+
+.mlm-portal-title {
+    font-size: 42px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, #f3f4f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.5);
+}
+
+.mlm-portal-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+/* Portal Layout */
+.mlm-portal-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 30px;
+    animation: mlm-fade-in-up 0.8s ease;
+}
+
+/* Sidebar */
+.mlm-portal-sidebar {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 30px 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--mlm-portal-shadow);
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+}
+
+.mlm-portal-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.mlm-portal-nav-item {
+    margin: 0;
+}
+
+.mlm-portal-nav-link {
+    display: flex;
+    align-items: center;
+    padding: 18px 30px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    font-size: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mlm-portal-nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #8B5CF6, #EC4899);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.mlm-portal-nav-link:hover,
+.mlm-portal-nav-link.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: translateX(5px);
+}
+
+.mlm-portal-nav-link:hover::before,
+.mlm-portal-nav-link.active::before {
+    transform: scaleY(1);
+}
+
+.mlm-portal-nav-icon {
+    font-size: 24px;
+    margin-right: 15px;
+    width: 30px;
+    text-align: center;
+}
+
+/* Main Content */
+.mlm-portal-main {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    padding: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--mlm-portal-shadow);
+    min-height: 600px;
+}
+
+/* Tab Content */
+.mlm-portal-tab-content {
+    display: none;
+    animation: mlm-fade-in 0.5s ease;
+}
+
+.mlm-portal-tab-content.active {
+    display: block;
+}
+
+/* Glass Cards */
+.mlm-glass-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+    transition: all 0.3s ease;
+}
+
+.mlm-glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(139, 92, 246, 0.3);
+}
+
+/* Stats Grid */
+.mlm-portal-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.mlm-stat-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mlm-stat-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: mlm-shimmer 3s ease-in-out infinite;
+}
+
+@keyframes mlm-shimmer {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(180deg); }
+}
+
+.mlm-stat-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 50px rgba(139, 92, 246, 0.4);
+}
+
+.mlm-stat-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));
+}
+
+.mlm-stat-value {
+    font-size: 36px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 10px;
+    text-shadow: 0 0 30px rgba(255,255,255,0.5);
+}
+
+.mlm-stat-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+/* Buttons */
+.mlm-portal-btn {
+    display: inline-block;
+    padding: 15px 35px;
+    background: linear-gradient(135deg, #8B5CF6, #EC4899);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.mlm-portal-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.mlm-portal-btn:hover::before {
+    left: 100%;
+}
+
+.mlm-portal-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
+}
+
+.mlm-portal-btn:active {
+    transform: translateY(-1px);
+}
+
+/* Tables */
+.mlm-portal-table {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.mlm-portal-table thead {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+.mlm-portal-table th {
+    padding: 20px;
+    color: #fff;
+    font-weight: 700;
+    text-align: left;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 1px;
+}
+
+.mlm-portal-table td {
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mlm-portal-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.mlm-portal-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Progress Bar */
+.mlm-progress-bar {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50px;
+    height: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.mlm-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8B5CF6, #EC4899);
+    border-radius: 50px;
+    position: relative;
+    overflow: hidden;
+    transition: width 1s ease;
+}
+
+.mlm-progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: mlm-progress-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes mlm-progress-shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Badges */
+.mlm-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mlm-badge-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+}
+
+.mlm-badge-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+}
+
+.mlm-badge-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #fff;
+}
+
+.mlm-badge-info {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+}
+
+/* Animations */
+@keyframes mlm-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes mlm-fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes mlm-fade-in-down {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes mlm-pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .mlm-portal-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .mlm-portal-sidebar {
+        position: static;
+    }
+
+    .mlm-portal-nav {
+        display: flex;
+        overflow-x: auto;
+        gap: 10px;
+        padding: 0 20px;
+    }
+
+    .mlm-portal-nav-item {
+        flex-shrink: 0;
+    }
+
+    .mlm-portal-nav-link {
+        padding: 15px 25px;
+        border-radius: 50px;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .mlm-portal-title {
+        font-size: 32px;
+    }
+
+    .mlm-portal-header {
+        padding: 20px 25px;
+    }
+
+    .mlm-portal-main {
+        padding: 25px;
+    }
+
+    .mlm-portal-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .mlm-stat-value {
+        font-size: 28px;
+    }
+}
+
+/* Loading Animation */
+.mlm-loading {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: mlm-spin 1s linear infinite;
+}
+
+@keyframes mlm-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Tooltips */
+.mlm-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.mlm-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: rgba(17, 24, 39, 0.95);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    margin-bottom: 5px;
+}
+
+.mlm-tooltip:hover::after {
+    opacity: 1;
+}
+
+/* Scrollbar */
+.mlm-portal-wrapper::-webkit-scrollbar {
+    width: 12px;
+}
+
+.mlm-portal-wrapper::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.mlm-portal-wrapper::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #8B5CF6, #EC4899);
+    border-radius: 6px;
+}
+
+.mlm-portal-wrapper::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #7C3AED, #DB2777);
+}

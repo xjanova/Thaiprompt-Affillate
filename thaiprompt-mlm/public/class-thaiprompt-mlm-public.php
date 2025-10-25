@@ -23,6 +23,17 @@ class Thaiprompt_MLM_Public {
             $this->version,
             'all'
         );
+
+        // Enqueue portal styles when on portal page
+        if (is_page_template('mlm-portal-template.php') || is_page('mlm-portal')) {
+            wp_enqueue_style(
+                $this->plugin_name . '-portal',
+                THAIPROMPT_MLM_PLUGIN_URL . 'public/css/thaiprompt-mlm-portal.css',
+                array(),
+                $this->version,
+                'all'
+            );
+        }
     }
 
     /**
@@ -49,6 +60,17 @@ class Thaiprompt_MLM_Public {
             $this->version,
             true
         );
+
+        // Portal script when on portal page
+        if (is_page_template('mlm-portal-template.php') || is_page('mlm-portal')) {
+            wp_enqueue_script(
+                $this->plugin_name . '-portal',
+                THAIPROMPT_MLM_PLUGIN_URL . 'public/js/thaiprompt-mlm-portal.js',
+                array('jquery', 'gsap'),
+                $this->version,
+                true
+            );
+        }
 
         // Localize script
         wp_localize_script($this->plugin_name, 'thaipromptMLM', array(
@@ -309,5 +331,26 @@ class Thaiprompt_MLM_Public {
         $referral_link = Thaiprompt_MLM_Network::get_referral_link($user_id);
 
         wp_send_json_success(array('link' => $referral_link));
+    }
+
+    /**
+     * Register portal page template
+     */
+    public function register_portal_template($templates) {
+        $templates['mlm-portal-template.php'] = __('MLM Portal', 'thaiprompt-mlm');
+        return $templates;
+    }
+
+    /**
+     * Load portal template
+     */
+    public function load_portal_template($template) {
+        if (is_page_template('mlm-portal-template.php')) {
+            $portal_template = THAIPROMPT_MLM_PLUGIN_DIR . 'templates/mlm-portal-template.php';
+            if (file_exists($portal_template)) {
+                return $portal_template;
+            }
+        }
+        return $template;
     }
 }
