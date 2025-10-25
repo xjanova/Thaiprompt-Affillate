@@ -25,7 +25,12 @@ $all_ranks = Thaiprompt_MLM_Database::get_all_ranks();
             <?php echo esc_html($rank_progress['current_rank']['name']); ?>
         </div>
         <div style="font-size: 16px; opacity: 0.9;">
-            <?php printf(__('Achieved on %s', 'thaiprompt-mlm'), date('F d, Y', strtotime($rank_progress['current_rank']['achieved_at']))); ?>
+            <?php
+            $achieved_date = isset($rank_progress['current_rank']['achieved_at']) && $rank_progress['current_rank']['achieved_at']
+                ? date('F d, Y', strtotime($rank_progress['current_rank']['achieved_at']))
+                : date('F d, Y');
+            printf(__('Achieved on %s', 'thaiprompt-mlm'), $achieved_date);
+            ?>
         </div>
     </div>
 
@@ -126,8 +131,10 @@ $all_ranks = Thaiprompt_MLM_Database::get_all_ranks();
         <h3><?php _e('All Ranks', 'thaiprompt-mlm'); ?></h3>
         <div class="mlm-ranks-timeline" style="margin-top: 30px;">
             <?php foreach ($all_ranks as $index => $rank):
-                $is_current = $rank->id == $rank_progress['current_rank']['id'];
-                $is_achieved = $rank->rank_order <= $rank_progress['current_rank']['rank_order'];
+                $current_rank_id = isset($rank_progress['current_rank']['id']) ? $rank_progress['current_rank']['id'] : 0;
+                $current_rank_order = isset($rank_progress['current_rank']['rank_order']) ? $rank_progress['current_rank']['rank_order'] : 1;
+                $is_current = $rank->id == $current_rank_id;
+                $is_achieved = $rank->rank_order <= $current_rank_order;
             ?>
             <div style="display: flex; align-items: center; margin-bottom: 30px; position: relative; <?php echo !$is_achieved ? 'opacity: 0.5;' : ''; ?>">
                 <div style="width: 60px; height: 60px; border-radius: 50%; background: <?php echo $is_achieved ? $rank->rank_color : '#e9ecef'; ?>; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; font-weight: 700; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1;">
