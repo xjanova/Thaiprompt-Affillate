@@ -759,3 +759,129 @@
         font-size: 12px;
     }
 }
+
+/* ==============================================
+   Portal Slideshow Styles
+   ============================================== */
+
+.mlm-portal-slideshow {
+    width: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.mlm-slideshow-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.mlm-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mlm-slide.active {
+    opacity: 1;
+    z-index: 1;
+}
+
+.mlm-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 20px;
+}
+
+.mlm-slide-prev,
+.mlm-slide-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    border: none;
+    padding: 15px 20px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s ease;
+    border-radius: 10px;
+}
+
+.mlm-slide-prev {
+    left: 20px;
+}
+
+.mlm-slide-next {
+    right: 20px;
+}
+
+.mlm-slide-prev:hover,
+.mlm-slide-next:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.mlm-slide-dots {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.mlm-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mlm-dot.active {
+    background: #fff;
+    width: 40px;
+    border-radius: 6px;
+}
+
+.mlm-dot:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* Responsive Slideshow */
+@media (max-width: 768px) {
+    .mlm-slideshow-container {
+        height: 250px;
+    }
+
+    .mlm-slide-prev,
+    .mlm-slide-next {
+        padding: 10px 15px;
+        font-size: 18px;
+    }
+
+    .mlm-slide-prev {
+        left: 10px;
+    }
+
+    .mlm-slide-next {
+        right: 10px;
+    }
+}

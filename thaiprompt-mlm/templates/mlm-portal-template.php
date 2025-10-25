@@ -13,6 +13,18 @@ if (!is_user_logged_in()) {
 $user_id = get_current_user_id();
 $user = wp_get_current_user();
 
+// Get Portal Settings
+$settings = get_option('thaiprompt_mlm_settings', array());
+$portal_logo = get_option('thaiprompt_mlm_portal_logo', '');
+$slideshow_images = get_option('thaiprompt_mlm_portal_slideshow', array());
+$header_text = isset($settings['portal_header_text']) ? $settings['portal_header_text'] : 'MLM Portal';
+$subtitle_text = isset($settings['portal_subtitle_text']) ? $settings['portal_subtitle_text'] : 'Welcome back, {name}!';
+$slideshow_enabled = isset($settings['portal_slideshow_enabled']) && $settings['portal_slideshow_enabled'];
+$slideshow_speed = isset($settings['portal_slideshow_speed']) ? intval($settings['portal_slideshow_speed']) : 5;
+
+// Replace {name} with user's display name
+$subtitle_text = str_replace('{name}', $user->display_name, $subtitle_text);
+
 // Get MLM data
 $position = Thaiprompt_MLM_Network::get_user_position($user_id);
 $team_stats = Thaiprompt_MLM_Network::get_team_stats($user_id);
@@ -53,11 +65,16 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
         <!-- Portal Header -->
         <header class="mlm-portal-header">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h1 class="mlm-portal-title">✨ <?php _e('MLM Portal', 'thaiprompt-mlm'); ?></h1>
-                    <p class="mlm-portal-subtitle">
-                        <?php printf(__('Welcome back, %s!', 'thaiprompt-mlm'), '<strong>' . esc_html($user->display_name) . '</strong>'); ?>
-                    </p>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <?php if ($portal_logo): ?>
+                        <img src="<?php echo esc_url($portal_logo); ?>" alt="<?php echo esc_attr($header_text); ?>" style="max-height: 60px; width: auto;">
+                    <?php endif; ?>
+                    <div>
+                        <h1 class="mlm-portal-title"><?php echo $portal_logo ? '' : '✨ '; ?><?php echo esc_html($header_text); ?></h1>
+                        <p class="mlm-portal-subtitle">
+                            <?php echo esc_html($subtitle_text); ?>
+                        </p>
+                    </div>
                 </div>
                 <div>
                     <a href="<?php echo home_url(); ?>" class="mlm-portal-btn" style="background: rgba(255,255,255,0.2);">
@@ -123,6 +140,70 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                     <h2 style="color: #fff; margin-bottom: 30px; font-size: 32px;">
                         📊 <?php _e('Dashboard Overview', 'thaiprompt-mlm'); ?>
                     </h2>
+
+                    <!-- Portal Slideshow -->
+                    <?php if ($slideshow_enabled && !empty($slideshow_images)): ?>
+                    <div class="mlm-portal-slideshow" style="margin-bottom: 30px;">
+                        <div class="mlm-slideshow-container">
+                            <?php foreach ($slideshow_images as $index => $image): ?>
+                                <div class="mlm-slide <?php echo $index === 0 ? 'active' : ''; ?>">
+                                    <img src="<?php echo esc_url($image); ?>" alt="Slide <?php echo $index + 1; ?>">
+                                </div>
+                            <?php endforeach; ?>
+
+                            <?php if (count($slideshow_images) > 1): ?>
+                                <button class="mlm-slide-prev">❮</button>
+                                <button class="mlm-slide-next">❯</button>
+
+                                <div class="mlm-slide-dots">
+                                    <?php foreach ($slideshow_images as $index => $image): ?>
+                                        <span class="mlm-dot <?php echo $index === 0 ? 'active' : ''; ?>" data-slide="<?php echo $index; ?>"></span>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <script>
+                    // Slideshow functionality
+                    (function() {
+                        let currentSlide = 0;
+                        const slides = document.querySelectorAll('.mlm-slide');
+                        const dots = document.querySelectorAll('.mlm-dot');
+                        const slideSpeed = <?php echo $slideshow_speed * 1000; ?>;
+
+                        function showSlide(n) {
+                            slides.forEach(s => s.classList.remove('active'));
+                            dots.forEach(d => d.classList.remove('active'));
+
+                            currentSlide = (n + slides.length) % slides.length;
+                            slides[currentSlide].classList.add('active');
+                            if (dots[currentSlide]) dots[currentSlide].classList.add('active');
+                        }
+
+                        function nextSlide() {
+                            showSlide(currentSlide + 1);
+                        }
+
+                        function prevSlide() {
+                            showSlide(currentSlide - 1);
+                        }
+
+                        // Auto advance
+                        setInterval(nextSlide, slideSpeed);
+
+                        // Navigation
+                        const prevBtn = document.querySelector('.mlm-slide-prev');
+                        const nextBtn = document.querySelector('.mlm-slide-next');
+                        if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+                        if (nextBtn) nextBtn.addEventListener('click', nextSlide);
+
+                        // Dots
+                        dots.forEach((dot, index) => {
+                            dot.addEventListener('click', () => showSlide(index));
+                        });
+                    })();
+                    </script>
+                    <?php endif; ?>
 
                     <!-- Stats Grid -->
                     <div class="mlm-portal-stats">
