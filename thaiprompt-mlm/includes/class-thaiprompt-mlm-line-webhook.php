@@ -404,10 +404,38 @@ class Thaiprompt_MLM_LINE_Webhook {
      * Handle regular conversation (AI or default)
      */
     private static function handle_conversation($text, $reply_token, $line_user_id, $wp_user) {
-        // TODO: Integrate with AI (ChatGPT, Gemini, DeepSeek)
-        // For now, just echo back
+        // Try AI response
+        $ai_response = Thaiprompt_MLM_AI_Handler::get_response($text, $line_user_id);
 
-        $message = "ได้รับข้อความ: " . $text . "\n\n(AI ยังไม่ได้เปิดใช้งาน)";
+        if (!is_wp_error($ai_response)) {
+            // AI response successful
+            $message = $ai_response;
+            Thaiprompt_MLM_Logger::info('AI response sent', array(
+                'user_id' => $line_user_id,
+                'provider' => get_option('thaiprompt_mlm_ai_provider', 'none')
+            ));
+        } else {
+            // AI not available or error - use default response
+            $error_message = $ai_response->get_error_message();
+
+            if ($ai_response->get_error_code() === 'no_ai') {
+                // AI disabled - friendly fallback
+                $message = "สวัสดีครับ! ขณะนี้ระบบอยู่ในโหมด Manual\n\n" .
+                          "คุณสามารถใช้คำสั่ง:\n" .
+                          "• /help - ดูคำสั่งทั้งหมด\n" .
+                          "• /profile - ดูข้อมูลของคุณ\n" .
+                          "• /referral - ดูลิงก์แนะนำ";
+            } else {
+                // AI error - log and send friendly message
+                Thaiprompt_MLM_Logger::error('AI response error', array(
+                    'error' => $error_message,
+                    'user_id' => $line_user_id
+                ));
+
+                $message = "ขออภัยครับ ขณะนี้ระบบไม่สามารถตอบกลับได้\n" .
+                          "กรุณาลองใหม่อีกครั้งหรือใช้คำสั่ง /help";
+            }
+        }
 
         $reply_message = Thaiprompt_MLM_LINE_Bot::build_text_message($message);
         Thaiprompt_MLM_LINE_Bot::reply_message($reply_token, $reply_message);

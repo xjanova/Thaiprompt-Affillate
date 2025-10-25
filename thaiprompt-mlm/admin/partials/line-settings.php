@@ -20,9 +20,19 @@ if (isset($_POST['save_line_settings']) && check_admin_referer('thaiprompt_mlm_l
     update_option('thaiprompt_mlm_line_auto_register', isset($_POST['line_auto_register']) ? 1 : 0);
     update_option('thaiprompt_mlm_line_welcome_message', sanitize_textarea_field($_POST['line_welcome_message']));
 
-    echo '<div class="notice notice-success"><p>✅ LINE settings saved successfully!</p></div>';
+    // Save AI settings
+    update_option('thaiprompt_mlm_ai_provider', sanitize_text_field($_POST['ai_provider'] ?? 'none'));
+    update_option('thaiprompt_mlm_chatgpt_api_key', sanitize_text_field($_POST['chatgpt_api_key'] ?? ''));
+    update_option('thaiprompt_mlm_chatgpt_model', sanitize_text_field($_POST['chatgpt_model'] ?? 'gpt-4o-mini'));
+    update_option('thaiprompt_mlm_gemini_api_key', sanitize_text_field($_POST['gemini_api_key'] ?? ''));
+    update_option('thaiprompt_mlm_gemini_model', sanitize_text_field($_POST['gemini_model'] ?? 'gemini-2.0-flash-exp'));
+    update_option('thaiprompt_mlm_deepseek_api_key', sanitize_text_field($_POST['deepseek_api_key'] ?? ''));
+    update_option('thaiprompt_mlm_deepseek_model', sanitize_text_field($_POST['deepseek_model'] ?? 'deepseek-chat'));
+    update_option('thaiprompt_mlm_ai_system_prompt', sanitize_textarea_field($_POST['ai_system_prompt'] ?? ''));
 
-    Thaiprompt_MLM_Logger::info('LINE settings updated');
+    echo '<div class="notice notice-success"><p>✅ LINE & AI settings saved successfully!</p></div>';
+
+    Thaiprompt_MLM_Logger::info('LINE and AI settings updated');
 }
 
 // Test connection
@@ -288,6 +298,126 @@ $webhook_url = home_url('/wp-json/thaiprompt-mlm/v1/line-webhook');
                     </tr>
                 </table>
 
+                <!-- AI Integration Settings -->
+                <h2 style="margin-top: 30px; padding-top: 30px; border-top: 2px solid #ddd;">
+                    🤖 <?php _e('AI Integration', 'thaiprompt-mlm'); ?>
+                </h2>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">
+                            <label for="ai_provider"><?php _e('AI Provider', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php
+                            $ai_provider = get_option('thaiprompt_mlm_ai_provider', 'none');
+                            $providers = Thaiprompt_MLM_AI_Handler::get_providers();
+                            ?>
+                            <select name="ai_provider" id="ai_provider" class="regular-text">
+                                <?php foreach ($providers as $value => $label): ?>
+                                <option value="<?php echo esc_attr($value); ?>" <?php selected($ai_provider, $value); ?>>
+                                    <?php echo esc_html($label); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description"><?php _e('เลือก AI ที่จะใช้ในการตอบกลับข้อความอัตโนมัติ', 'thaiprompt-mlm'); ?></p>
+                        </td>
+                    </tr>
+
+                    <!-- ChatGPT Settings -->
+                    <tr class="ai-settings chatgpt-settings" style="<?php echo $ai_provider !== 'chatgpt' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="chatgpt_api_key"><?php _e('ChatGPT API Key', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <input type="password" name="chatgpt_api_key" id="chatgpt_api_key" class="regular-text" value="<?php echo esc_attr(get_option('thaiprompt_mlm_chatgpt_api_key', '')); ?>" placeholder="sk-...">
+                            <p class="description">
+                                <?php _e('Get your API key from', 'thaiprompt-mlm'); ?>
+                                <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr class="ai-settings chatgpt-settings" style="<?php echo $ai_provider !== 'chatgpt' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="chatgpt_model"><?php _e('ChatGPT Model', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php $chatgpt_model = get_option('thaiprompt_mlm_chatgpt_model', 'gpt-4o-mini'); ?>
+                            <select name="chatgpt_model" id="chatgpt_model" class="regular-text">
+                                <option value="gpt-4o" <?php selected($chatgpt_model, 'gpt-4o'); ?>>GPT-4o</option>
+                                <option value="gpt-4o-mini" <?php selected($chatgpt_model, 'gpt-4o-mini'); ?>>GPT-4o Mini (Recommended)</option>
+                                <option value="gpt-4-turbo" <?php selected($chatgpt_model, 'gpt-4-turbo'); ?>>GPT-4 Turbo</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    <!-- Gemini Settings -->
+                    <tr class="ai-settings gemini-settings" style="<?php echo $ai_provider !== 'gemini' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="gemini_api_key"><?php _e('Gemini API Key', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <input type="password" name="gemini_api_key" id="gemini_api_key" class="regular-text" value="<?php echo esc_attr(get_option('thaiprompt_mlm_gemini_api_key', '')); ?>" placeholder="AIza...">
+                            <p class="description">
+                                <?php _e('Get your API key from', 'thaiprompt-mlm'); ?>
+                                <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr class="ai-settings gemini-settings" style="<?php echo $ai_provider !== 'gemini' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="gemini_model"><?php _e('Gemini Model', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php $gemini_model = get_option('thaiprompt_mlm_gemini_model', 'gemini-2.0-flash-exp'); ?>
+                            <select name="gemini_model" id="gemini_model" class="regular-text">
+                                <option value="gemini-2.0-flash-exp" <?php selected($gemini_model, 'gemini-2.0-flash-exp'); ?>>Gemini 2.0 Flash (Recommended)</option>
+                                <option value="gemini-1.5-flash" <?php selected($gemini_model, 'gemini-1.5-flash'); ?>>Gemini 1.5 Flash</option>
+                                <option value="gemini-1.5-pro" <?php selected($gemini_model, 'gemini-1.5-pro'); ?>>Gemini 1.5 Pro</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    <!-- DeepSeek Settings -->
+                    <tr class="ai-settings deepseek-settings" style="<?php echo $ai_provider !== 'deepseek' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="deepseek_api_key"><?php _e('DeepSeek API Key', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <input type="password" name="deepseek_api_key" id="deepseek_api_key" class="regular-text" value="<?php echo esc_attr(get_option('thaiprompt_mlm_deepseek_api_key', '')); ?>" placeholder="sk-...">
+                            <p class="description">
+                                <?php _e('Get your API key from', 'thaiprompt-mlm'); ?>
+                                <a href="https://platform.deepseek.com/api_keys" target="_blank">DeepSeek Platform</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr class="ai-settings deepseek-settings" style="<?php echo $ai_provider !== 'deepseek' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="deepseek_model"><?php _e('DeepSeek Model', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php $deepseek_model = get_option('thaiprompt_mlm_deepseek_model', 'deepseek-chat'); ?>
+                            <select name="deepseek_model" id="deepseek_model" class="regular-text">
+                                <option value="deepseek-chat" <?php selected($deepseek_model, 'deepseek-chat'); ?>>DeepSeek Chat (Recommended)</option>
+                            </select>
+                        </td>
+                    </tr>
+
+                    <!-- System Prompt -->
+                    <tr class="ai-settings" style="<?php echo $ai_provider === 'none' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="ai_system_prompt"><?php _e('System Prompt', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php
+                            $default_prompt = "You are a helpful MLM assistant for " . get_bloginfo('name') . ". Help members with their referral program, earnings, and network building.";
+                            $system_prompt = get_option('thaiprompt_mlm_ai_system_prompt', $default_prompt);
+                            ?>
+                            <textarea name="ai_system_prompt" id="ai_system_prompt" rows="6" class="large-text"><?php echo esc_textarea($system_prompt); ?></textarea>
+                            <p class="description"><?php _e('กำหนดบุคลิกและบทบาทของ AI (System Prompt)', 'thaiprompt-mlm'); ?></p>
+                        </td>
+                    </tr>
+                </table>
+
                 <p class="submit">
                     <button type="submit" name="save_line_settings" class="button button-primary button-large">
                         💾 <?php _e('Save Settings', 'thaiprompt-mlm'); ?>
@@ -355,3 +485,21 @@ $webhook_url = home_url('/wp-json/thaiprompt-mlm/v1/line-webhook');
     color: #333;
 }
 </style>
+
+<script>
+jQuery(document).ready(function($) {
+    // AI Provider selection
+    $('#ai_provider').on('change', function() {
+        var provider = $(this).val();
+
+        // Hide all AI settings
+        $('.ai-settings').hide();
+
+        // Show relevant settings
+        if (provider !== 'none') {
+            $('.ai-settings:not([class*="-settings"])').show(); // Show system prompt
+            $('.' + provider + '-settings').show(); // Show provider-specific settings
+        }
+    });
+});
+</script>
