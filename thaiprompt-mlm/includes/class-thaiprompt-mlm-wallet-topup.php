@@ -283,17 +283,42 @@ class Thaiprompt_MLM_Wallet_Topup {
     }
 
     /**
-     * Get wallet top-up amounts (predefined)
+     * Get wallet top-up amounts (from settings or default)
      */
     public static function get_topup_amounts() {
-        return apply_filters('thaiprompt_mlm_wallet_topup_amounts', array(
-            100,
-            500,
-            1000,
-            2000,
-            5000,
-            10000
-        ));
+        $amounts = get_option('thaiprompt_mlm_topup_amounts', array());
+
+        // If empty, use defaults
+        if (empty($amounts)) {
+            $amounts = array(100, 500, 1000, 2000, 5000, 10000);
+        }
+
+        return apply_filters('thaiprompt_mlm_wallet_topup_amounts', $amounts);
+    }
+
+    /**
+     * Save wallet top-up amounts
+     */
+    public static function save_topup_amounts($amounts) {
+        // Clean and validate amounts
+        $clean_amounts = array();
+        foreach ($amounts as $amount) {
+            $amount = floatval($amount);
+            if ($amount > 0) {
+                $clean_amounts[] = $amount;
+            }
+        }
+
+        // Sort amounts
+        sort($clean_amounts);
+
+        // Save
+        update_option('thaiprompt_mlm_topup_amounts', $clean_amounts);
+
+        // Auto-create products for new amounts
+        self::create_all_wallet_products();
+
+        return $clean_amounts;
     }
 
     /**

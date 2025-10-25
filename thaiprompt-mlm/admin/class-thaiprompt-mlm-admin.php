@@ -105,6 +105,16 @@ class Thaiprompt_MLM_Admin {
             array($this, 'display_wallet')
         );
 
+        // Wallet Top-up Settings
+        add_submenu_page(
+            'thaiprompt-mlm',
+            __('Wallet Top-up Settings', 'thaiprompt-mlm'),
+            __('💳 Top-up Settings', 'thaiprompt-mlm'),
+            'manage_options',
+            'thaiprompt-mlm-wallet-topup',
+            array($this, 'display_wallet_topup_settings')
+        );
+
         // Ranks
         add_submenu_page(
             'thaiprompt-mlm',
@@ -232,6 +242,13 @@ class Thaiprompt_MLM_Admin {
      */
     public function display_wallet() {
         include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/wallet.php';
+    }
+
+    /**
+     * Display wallet top-up settings page
+     */
+    public function display_wallet_topup_settings() {
+        include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/wallet-topup-settings.php';
     }
 
     /**

@@ -568,21 +568,29 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                             ?>
                             <a href="<?php echo esc_url($topup_url); ?>"
                                class="mlm-topup-card"
-                               style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
-                                      border: 2px solid rgba(16, 185, 129, 0.3);
-                                      border-radius: 12px;
-                                      padding: 25px;
+                               style="background: linear-gradient(145deg, #10b981, #059669);
+                                      border: none;
+                                      border-radius: 16px;
+                                      padding: 30px 20px;
                                       text-align: center;
                                       text-decoration: none;
-                                      transition: all 0.3s ease;
-                                      display: block;">
-                                <div style="font-size: 28px; margin-bottom: 10px;">💵</div>
-                                <div style="color: #fff; font-size: 24px; font-weight: bold; margin-bottom: 5px;">
+                                      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                                      display: block;
+                                      position: relative;
+                                      transform: translateY(0);
+                                      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3),
+                                                  0 5px 10px rgba(0, 0, 0, 0.2),
+                                                  inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                                                  inset 0 -1px 0 rgba(0, 0, 0, 0.1);">
+                                <div style="font-size: 32px; margin-bottom: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); transition: transform 0.3s ease;">💵</div>
+                                <div style="color: #fff; font-size: 28px; font-weight: 800; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
                                     ฿<?php echo number_format($amount, 2); ?>
                                 </div>
-                                <div style="color: rgba(255,255,255,0.6); font-size: 13px;">
+                                <div style="color: rgba(255,255,255,0.9); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
                                     <?php _e('Top-up', 'thaiprompt-mlm'); ?>
                                 </div>
+                                <!-- Shine effect -->
+                                <div class="mlm-topup-shine" style="position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); transition: left 0.5s ease;"></div>
                             </a>
                             <?php endforeach; ?>
                         </div>
@@ -912,16 +920,9 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                    <?php
-                                    // Preview URL - accessible for any status
-                                    $preview_url = add_query_arg(array(
-                                        'ref' => $referral_code,
-                                        'preview' => 'true'
-                                    ), home_url('landing/' . $landing_page->id));
-                                    ?>
-                                    <a href="<?php echo esc_url($preview_url); ?>" target="_blank" class="mlm-portal-btn" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                                    <button class="mlm-portal-btn mlm-preview-landing-btn" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
                                         👁️ <?php _e('Preview', 'thaiprompt-mlm'); ?>
-                                    </a>
+                                    </button>
                                     <?php if ($landing_page->status === 'approved' && $landing_page->is_active): ?>
                                         <a href="<?php echo esc_url($landing_url); ?>" target="_blank" class="mlm-portal-btn" style="background: linear-gradient(135deg, #10b981, #059669);">
                                             🌐 <?php _e('Live Page', 'thaiprompt-mlm'); ?>
@@ -1358,9 +1359,84 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                 });
             });
         }
+
+        // 3D Top-up Card Effects
+        const topupCards = document.querySelectorAll('.mlm-topup-card');
+        topupCards.forEach(function(card) {
+            // Hover effect
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-8px) scale(1.05)';
+                this.style.boxShadow = '0 20px 40px rgba(16, 185, 129, 0.4), 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.1)';
+
+                // Emoji bounce
+                const emoji = this.querySelector('div:first-child');
+                if (emoji) {
+                    emoji.style.transform = 'scale(1.2) rotate(10deg)';
+                }
+
+                // Shine effect
+                const shine = this.querySelector('.mlm-topup-shine');
+                if (shine) {
+                    shine.style.left = '100%';
+                }
+            });
+
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+                this.style.boxShadow = '0 10px 25px rgba(16, 185, 129, 0.3), 0 5px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.1)';
+
+                // Emoji reset
+                const emoji = this.querySelector('div:first-child');
+                if (emoji) {
+                    emoji.style.transform = 'scale(1) rotate(0deg)';
+                }
+
+                // Reset shine
+                const shine = this.querySelector('.mlm-topup-shine');
+                if (shine) {
+                    shine.style.left = '-100%';
+                }
+            });
+
+            // Active (click) effect
+            card.addEventListener('mousedown', function() {
+                this.style.transform = 'translateY(-2px) scale(0.98)';
+                this.style.boxShadow = '0 5px 15px rgba(16, 185, 129, 0.3), 0 2px 5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.2)';
+            });
+
+            card.addEventListener('mouseup', function() {
+                this.style.transform = 'translateY(-8px) scale(1.05)';
+                this.style.boxShadow = '0 20px 40px rgba(16, 185, 129, 0.4), 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.1)';
+            });
+        });
     }
 })();
 </script>
+
+<style>
+/* Top-up Card 3D Effects */
+.mlm-topup-card {
+    overflow: hidden;
+    cursor: pointer;
+    will-change: transform, box-shadow;
+}
+
+.mlm-topup-card:active {
+    transform: translateY(-2px) scale(0.98) !important;
+}
+
+/* Disable effects on mobile for performance */
+@media (max-width: 768px) {
+    .mlm-topup-card {
+        transform: none !important;
+    }
+
+    .mlm-topup-card:hover {
+        transform: none !important;
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3), 0 5px 10px rgba(0, 0, 0, 0.2) !important;
+    }
+}
+</style>
 
 <?php wp_footer(); ?>
 </body>
