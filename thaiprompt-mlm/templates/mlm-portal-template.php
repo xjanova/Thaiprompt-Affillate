@@ -457,10 +457,60 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                         <div style="color: rgba(255,255,255,0.7); margin-bottom: 30px;">
                             <?php printf(__('Pending: %s', 'thaiprompt-mlm'), wc_price($wallet->pending_balance ?? 0)); ?>
                         </div>
-                        <button class="mlm-portal-btn mlm-withdraw-btn">
-                            <?php _e('Withdraw Funds', 'thaiprompt-mlm'); ?>
-                        </button>
+                        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                            <button class="mlm-portal-btn mlm-withdraw-btn">
+                                <?php _e('Withdraw Funds', 'thaiprompt-mlm'); ?>
+                            </button>
+                            <?php if (class_exists('WooCommerce')): ?>
+                            <button class="mlm-portal-btn" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="document.getElementById('wallet-topup-section').scrollIntoView({behavior: 'smooth'});">
+                                💳 <?php _e('Top-up Wallet', 'thaiprompt-mlm'); ?>
+                            </button>
+                            <?php endif; ?>
+                        </div>
                     </div>
+
+                    <!-- Wallet Top-up (WooCommerce) -->
+                    <?php if (class_exists('WooCommerce')): ?>
+                    <div id="wallet-topup-section" class="mlm-glass-card" style="margin-bottom: 30px;">
+                        <h3 style="color: #fff; margin-bottom: 20px;">💳 <?php _e('Top-up Wallet', 'thaiprompt-mlm'); ?></h3>
+                        <p style="color: rgba(255,255,255,0.7); margin-bottom: 25px;">
+                            <?php _e('เลือกจำนวนเงินที่ต้องการเติมเข้ากระเป๋าเงิน', 'thaiprompt-mlm'); ?>
+                        </p>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                            <?php
+                            $topup_amounts = Thaiprompt_MLM_Wallet_Topup::get_topup_amounts();
+                            foreach ($topup_amounts as $amount):
+                                $topup_url = Thaiprompt_MLM_Wallet_Topup::get_topup_url($user_id, $amount);
+                            ?>
+                            <a href="<?php echo esc_url($topup_url); ?>"
+                               class="mlm-topup-card"
+                               style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2));
+                                      border: 2px solid rgba(16, 185, 129, 0.3);
+                                      border-radius: 12px;
+                                      padding: 25px;
+                                      text-align: center;
+                                      text-decoration: none;
+                                      transition: all 0.3s ease;
+                                      display: block;">
+                                <div style="font-size: 28px; margin-bottom: 10px;">💵</div>
+                                <div style="color: #fff; font-size: 24px; font-weight: bold; margin-bottom: 5px;">
+                                    <?php echo wc_price($amount); ?>
+                                </div>
+                                <div style="color: rgba(255,255,255,0.6); font-size: 13px;">
+                                    <?php _e('Top-up', 'thaiprompt-mlm'); ?>
+                                </div>
+                            </a>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; border-radius: 8px;">
+                            <p style="color: rgba(255,255,255,0.8); margin: 0; font-size: 14px;">
+                                💡 <?php _e('เงินที่เติมจะเข้ากระเป๋าทันทีหลังชำระเงินสำเร็จ และไม่มีค่าธรรมเนียม', 'thaiprompt-mlm'); ?>
+                            </p>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- Recent Transactions -->
                     <div class="mlm-glass-card">
@@ -669,10 +719,20 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 10px;">
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <?php
+                                    // Preview URL - accessible for any status
+                                    $preview_url = add_query_arg(array(
+                                        'ref' => $referral_code,
+                                        'preview' => 'true'
+                                    ), home_url('landing/' . $landing_page->id));
+                                    ?>
+                                    <a href="<?php echo esc_url($preview_url); ?>" target="_blank" class="mlm-portal-btn" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                                        👁️ <?php _e('Preview', 'thaiprompt-mlm'); ?>
+                                    </a>
                                     <?php if ($landing_page->status === 'approved' && $landing_page->is_active): ?>
                                         <a href="<?php echo esc_url($landing_url); ?>" target="_blank" class="mlm-portal-btn" style="background: linear-gradient(135deg, #10b981, #059669);">
-                                            👁️ <?php _e('View Page', 'thaiprompt-mlm'); ?>
+                                            🌐 <?php _e('Live Page', 'thaiprompt-mlm'); ?>
                                         </a>
                                     <?php endif; ?>
                                     <button class="mlm-portal-btn mlm-edit-landing-btn">
