@@ -2,6 +2,51 @@
 
 All notable changes to Thaiprompt MLM Plugin will be documented in this file.
 
+## [1.7.0] - 2024-01-24 (In Progress)
+
+### ✨ New Features - Landing Page Builder (Phase 1)
+
+Landing page builder with admin approval system (partial implementation).
+
+### Added - Landing Page System
+- ✅ **Database Table** - Landing pages table with approval fields
+- ✅ **Landing Page Builder UI** - Complete form in Portal
+- ✅ **Image Upload** - Support for up to 3 images (max 5MB each)
+- ✅ **Form Fields** - Title, headline, description, CTA text
+- ✅ **Status System** - Pending, approved, rejected states
+- ✅ **Preview Display** - Live preview of landing page
+- ✅ **AJAX Handler** - Save/update with image upload
+- ✅ **Edit Functionality** - Edit existing landing pages
+- ✅ **Validation** - File type and size validation (both frontend & backend)
+- ✅ **JavaScript** - Form submission, image preview, UI interactions
+- ✅ **Image Preview** - Client-side preview before upload
+- ✅ **Loading States** - Button states during form submission
+
+### Pending Implementation
+- ⏳ **Admin Approval Page** - Admin interface for reviewing pages
+- ⏳ **Public Template** - Frontend landing page display
+- ⏳ **Notifications** - Email notifications for approval/rejection
+- ⏳ **Analytics** - View and conversion tracking
+
+### Technical Implementation
+- New table: wp_thaiprompt_mlm_landing_pages
+- AJAX endpoint: mlm_save_landing_page
+- Image upload via wp_handle_upload()
+- Status workflow: pending → approved/rejected
+- Max 3 images per landing page
+- Image validation (type, size) - frontend & backend
+- jQuery form submission with FormData
+- FileReader API for image preview
+- Client-side validation before upload
+- Loading states and user feedback
+
+### Next Steps (v1.7.1)
+1. Build admin approval interface
+2. Create public landing page template
+3. Add email notifications
+4. Implement analytics tracking
+5. Landing page URL routing system
+
 ## [1.6.0] - 2024-01-24
 
 ### ✨ New Features - Mobile First & Referral System
