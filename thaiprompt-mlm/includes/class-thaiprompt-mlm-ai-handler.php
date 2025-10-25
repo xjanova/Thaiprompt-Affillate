@@ -317,18 +317,137 @@ class Thaiprompt_MLM_AI_Handler {
      */
     private static function get_default_system_prompt() {
         $site_name = get_bloginfo('name');
+        $site_description = get_bloginfo('description');
 
-        return "You are a helpful MLM (Multi-Level Marketing) assistant for {$site_name}. " .
-               "You help members with:\n" .
-               "- Understanding the MLM program and compensation plan\n" .
-               "- Getting their referral links and codes\n" .
-               "- Checking their network statistics and earnings\n" .
-               "- Learning about ranks and how to advance\n" .
-               "- Creating and managing landing pages\n\n" .
-               "Be friendly, professional, and encouraging. " .
-               "Use Thai language if the user speaks Thai, otherwise use English. " .
-               "Keep responses concise (under 300 characters when possible) as this is a LINE chat. " .
-               "If users ask about technical issues or account problems, suggest they contact support.";
+        // Base prompt
+        $prompt = "You are a helpful MLM (Multi-Level Marketing) assistant for {$site_name}. " .
+                 "You help members with:\n" .
+                 "- Understanding the MLM program and compensation plan\n" .
+                 "- Getting their referral links and codes\n" .
+                 "- Checking their network statistics and earnings\n" .
+                 "- Learning about ranks and how to advance\n" .
+                 "- Creating and managing landing pages\n\n";
+
+        // Get knowledge sources configuration
+        $knowledge_sources = get_option('thaiprompt_mlm_ai_knowledge_sources', array('general'));
+        $response_mode = get_option('thaiprompt_mlm_ai_response_mode', 'flexible');
+
+        // Add knowledge sources information
+        $knowledge_context = self::build_knowledge_context($knowledge_sources);
+        if (!empty($knowledge_context)) {
+            $prompt .= "\n=== KNOWLEDGE BASE ===\n" . $knowledge_context . "\n";
+        }
+
+        // Add response mode instructions
+        $prompt .= self::get_response_mode_instructions($response_mode, $knowledge_sources);
+
+        // General instructions
+        $prompt .= "\n\nBe friendly, professional, and encouraging. " .
+                  "Use Thai language if the user speaks Thai, otherwise use English. " .
+                  "Keep responses concise (under 300 characters when possible) as this is a LINE chat. " .
+                  "If users ask about technical issues or account problems, suggest they contact support.";
+
+        return $prompt;
+    }
+
+    /**
+     * Build knowledge context from configured sources
+     */
+    private static function build_knowledge_context($knowledge_sources) {
+        $context = '';
+
+        // Website Information
+        if (in_array('website', $knowledge_sources)) {
+            $site_name = get_bloginfo('name');
+            $site_description = get_bloginfo('description');
+            $site_url = home_url();
+
+            $context .= "Website Information:\n";
+            $context .= "- Site Name: {$site_name}\n";
+            $context .= "- Description: {$site_description}\n";
+            $context .= "- URL: {$site_url}\n\n";
+        }
+
+        // Selected Posts/Articles
+        if (in_array('posts', $knowledge_sources)) {
+            $selected_posts = get_option('thaiprompt_mlm_ai_knowledge_posts', array());
+
+            if (!empty($selected_posts)) {
+                $context .= "Available Articles:\n";
+
+                foreach ($selected_posts as $post_id) {
+                    $post = get_post($post_id);
+                    if ($post) {
+                        $content = wp_strip_all_tags($post->post_content);
+                        $content = substr($content, 0, 500); // Limit to 500 chars per post
+
+                        $context .= "- Title: {$post->post_title}\n";
+                        $context .= "  Summary: {$content}...\n";
+                        $context .= "  URL: " . get_permalink($post_id) . "\n\n";
+                    }
+                }
+            }
+        }
+
+        // External Links
+        if (in_array('links', $knowledge_sources)) {
+            $links = get_option('thaiprompt_mlm_ai_knowledge_links', '');
+
+            if (!empty($links)) {
+                $links_array = array_filter(explode("\n", $links));
+
+                if (!empty($links_array)) {
+                    $context .= "Reference Links:\n";
+                    foreach ($links_array as $link) {
+                        $link = trim($link);
+                        if (!empty($link)) {
+                            $context .= "- " . esc_url($link) . "\n";
+                        }
+                    }
+                    $context .= "\n";
+                }
+            }
+        }
+
+        // Custom Knowledge Base
+        if (in_array('custom', $knowledge_sources)) {
+            $custom_knowledge = get_option('thaiprompt_mlm_ai_knowledge_custom', '');
+
+            if (!empty($custom_knowledge)) {
+                $context .= "Custom Knowledge Base:\n";
+                $context .= $custom_knowledge . "\n\n";
+            }
+        }
+
+        return $context;
+    }
+
+    /**
+     * Get response mode instructions
+     */
+    private static function get_response_mode_instructions($mode, $knowledge_sources) {
+        $has_specific_knowledge = count(array_diff($knowledge_sources, array('general'))) > 0;
+
+        if (!$has_specific_knowledge) {
+            return '';
+        }
+
+        switch ($mode) {
+            case 'strict':
+                return "\n⚠️ STRICT MODE: ONLY answer questions based on the knowledge base provided above. " .
+                       "If the answer is not in the knowledge base, politely say you don't have that information " .
+                       "and suggest contacting support or checking the website.";
+
+            case 'moderate':
+                return "\n📋 MODERATE MODE: Prioritize answering from the knowledge base provided above. " .
+                       "You may supplement with general knowledge if needed, but clearly indicate when you're " .
+                       "using general knowledge vs. specific information from the knowledge base.";
+
+            case 'flexible':
+            default:
+                return "\n✨ FLEXIBLE MODE: Use the knowledge base provided above as primary reference, " .
+                       "but feel free to use your general knowledge to provide helpful answers.";
+        }
     }
 
     /**

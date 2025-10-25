@@ -30,6 +30,21 @@ if (isset($_POST['save_line_settings']) && check_admin_referer('thaiprompt_mlm_l
     update_option('thaiprompt_mlm_deepseek_model', sanitize_text_field($_POST['deepseek_model'] ?? 'deepseek-chat'));
     update_option('thaiprompt_mlm_ai_system_prompt', sanitize_textarea_field($_POST['ai_system_prompt'] ?? ''));
 
+    // Save AI Knowledge Sources
+    $knowledge_sources = isset($_POST['ai_knowledge_sources']) && is_array($_POST['ai_knowledge_sources'])
+        ? array_map('sanitize_text_field', $_POST['ai_knowledge_sources'])
+        : array('general');
+    update_option('thaiprompt_mlm_ai_knowledge_sources', $knowledge_sources);
+
+    $knowledge_posts = isset($_POST['ai_knowledge_posts']) && is_array($_POST['ai_knowledge_posts'])
+        ? array_map('intval', $_POST['ai_knowledge_posts'])
+        : array();
+    update_option('thaiprompt_mlm_ai_knowledge_posts', $knowledge_posts);
+
+    update_option('thaiprompt_mlm_ai_knowledge_links', sanitize_textarea_field($_POST['ai_knowledge_links'] ?? ''));
+    update_option('thaiprompt_mlm_ai_knowledge_custom', sanitize_textarea_field($_POST['ai_knowledge_custom'] ?? ''));
+    update_option('thaiprompt_mlm_ai_response_mode', sanitize_text_field($_POST['ai_response_mode'] ?? 'flexible'));
+
     echo '<div class="notice notice-success"><p>✅ LINE & AI settings saved successfully!</p></div>';
 
     Thaiprompt_MLM_Logger::info('LINE and AI settings updated');
@@ -414,6 +429,160 @@ $webhook_url = home_url('/wp-json/thaiprompt-mlm/v1/line-webhook');
                             ?>
                             <textarea name="ai_system_prompt" id="ai_system_prompt" rows="6" class="large-text"><?php echo esc_textarea($system_prompt); ?></textarea>
                             <p class="description"><?php _e('กำหนดบุคลิกและบทบาทของ AI (System Prompt)', 'thaiprompt-mlm'); ?></p>
+                        </td>
+                    </tr>
+
+                    <!-- AI Knowledge Sources -->
+                    <tr class="ai-settings" style="<?php echo $ai_provider === 'none' ? 'display:none;' : ''; ?>">
+                        <th scope="row" colspan="2" style="padding-top: 30px;">
+                            <h3 style="margin: 0; padding: 15px 0; border-top: 1px solid #ddd;">
+                                📚 <?php _e('AI Knowledge Sources', 'thaiprompt-mlm'); ?>
+                            </h3>
+                            <p style="font-weight: normal; color: #666; margin-top: 10px;">
+                                <?php _e('กำหนดแหล่งข้อมูลที่ AI จะใช้ในการตอบคำถาม (สามารถเลือกได้หลายแหล่ง)', 'thaiprompt-mlm'); ?>
+                            </p>
+                        </th>
+                    </tr>
+
+                    <tr class="ai-settings" style="<?php echo $ai_provider === 'none' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label><?php _e('Enable Knowledge Sources', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php
+                            $knowledge_sources = get_option('thaiprompt_mlm_ai_knowledge_sources', array('general'));
+                            if (!is_array($knowledge_sources)) {
+                                $knowledge_sources = array('general');
+                            }
+                            ?>
+                            <fieldset>
+                                <label>
+                                    <input type="checkbox" name="ai_knowledge_sources[]" value="general" <?php checked(in_array('general', $knowledge_sources)); ?>>
+                                    <?php _e('General Knowledge (AI default)', 'thaiprompt-mlm'); ?>
+                                </label><br>
+
+                                <label>
+                                    <input type="checkbox" name="ai_knowledge_sources[]" value="website" <?php checked(in_array('website', $knowledge_sources)); ?>>
+                                    <?php _e('Website Information (Site name, description)', 'thaiprompt-mlm'); ?>
+                                </label><br>
+
+                                <label>
+                                    <input type="checkbox" name="ai_knowledge_sources[]" value="posts" <?php checked(in_array('posts', $knowledge_sources)); ?>>
+                                    <?php _e('Selected Posts/Articles', 'thaiprompt-mlm'); ?>
+                                </label><br>
+
+                                <label>
+                                    <input type="checkbox" name="ai_knowledge_sources[]" value="links" <?php checked(in_array('links', $knowledge_sources)); ?>>
+                                    <?php _e('External Links', 'thaiprompt-mlm'); ?>
+                                </label><br>
+
+                                <label>
+                                    <input type="checkbox" name="ai_knowledge_sources[]" value="custom" <?php checked(in_array('custom', $knowledge_sources)); ?>>
+                                    <?php _e('Custom Knowledge Base', 'thaiprompt-mlm'); ?>
+                                </label>
+                            </fieldset>
+                            <p class="description">
+                                <?php _e('เลือกแหล่งข้อมูลที่ต้องการให้ AI ใช้ในการตอบคำถาม', 'thaiprompt-mlm'); ?>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Selected Posts -->
+                    <tr class="ai-settings" style="<?php echo $ai_provider === 'none' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="ai_knowledge_posts"><?php _e('Selected Posts', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php
+                            $selected_posts = get_option('thaiprompt_mlm_ai_knowledge_posts', array());
+                            if (!is_array($selected_posts)) {
+                                $selected_posts = array();
+                            }
+
+                            $posts = get_posts(array(
+                                'numberposts' => -1,
+                                'post_type' => 'post',
+                                'post_status' => 'publish',
+                                'orderby' => 'date',
+                                'order' => 'DESC'
+                            ));
+                            ?>
+                            <select name="ai_knowledge_posts[]" id="ai_knowledge_posts" multiple class="regular-text" style="height: 150px;">
+                                <?php if (!empty($posts)): ?>
+                                    <?php foreach ($posts as $post): ?>
+                                        <option value="<?php echo $post->ID; ?>" <?php echo in_array($post->ID, $selected_posts) ? 'selected' : ''; ?>>
+                                            <?php echo esc_html($post->post_title); ?> (<?php echo date('Y-m-d', strtotime($post->post_date)); ?>)
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <option disabled><?php _e('No posts available', 'thaiprompt-mlm'); ?></option>
+                                <?php endif; ?>
+                            </select>
+                            <p class="description">
+                                <?php _e('เลือกบทความที่ต้องการให้ AI ใช้ในการตอบคำถาม (กด Ctrl/Cmd เพื่อเลือกหลายรายการ)', 'thaiprompt-mlm'); ?>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- External Links -->
+                    <tr class="ai-settings" style="<?php echo $ai_provider === 'none' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="ai_knowledge_links"><?php _e('External Links', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php
+                            $knowledge_links = get_option('thaiprompt_mlm_ai_knowledge_links', '');
+                            ?>
+                            <textarea name="ai_knowledge_links" id="ai_knowledge_links" rows="6" class="large-text" placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"><?php echo esc_textarea($knowledge_links); ?></textarea>
+                            <p class="description">
+                                <?php _e('ใส่ URL ของหน้าเว็บที่ต้องการให้ AI ใช้อ้างอิง (แยกด้วยบรรทัดใหม่)', 'thaiprompt-mlm'); ?><br>
+                                <strong><?php _e('Note:', 'thaiprompt-mlm'); ?></strong> <?php _e('AI will be instructed to answer based on these links', 'thaiprompt-mlm'); ?>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Custom Knowledge Base -->
+                    <tr class="ai-settings" style="<?php echo $ai_provider === 'none' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="ai_knowledge_custom"><?php _e('Custom Knowledge Base', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php
+                            $knowledge_custom = get_option('thaiprompt_mlm_ai_knowledge_custom', '');
+                            ?>
+                            <textarea name="ai_knowledge_custom" id="ai_knowledge_custom" rows="10" class="large-text" placeholder="<?php _e('Enter custom information, FAQs, product details, or any data you want AI to know...', 'thaiprompt-mlm'); ?>"><?php echo esc_textarea($knowledge_custom); ?></textarea>
+                            <p class="description">
+                                <?php _e('ใส่ข้อมูลเพิ่มเติมที่ต้องการให้ AI รู้และใช้ในการตอบคำถาม (FAQ, รายละเอียดสินค้า, ข้อมูลบริษัท ฯลฯ)', 'thaiprompt-mlm'); ?>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Response Boundaries -->
+                    <tr class="ai-settings" style="<?php echo $ai_provider === 'none' ? 'display:none;' : ''; ?>">
+                        <th scope="row">
+                            <label for="ai_response_mode"><?php _e('Response Mode', 'thaiprompt-mlm'); ?></label>
+                        </th>
+                        <td>
+                            <?php
+                            $response_mode = get_option('thaiprompt_mlm_ai_response_mode', 'flexible');
+                            ?>
+                            <select name="ai_response_mode" id="ai_response_mode" class="regular-text">
+                                <option value="flexible" <?php selected($response_mode, 'flexible'); ?>>
+                                    <?php _e('Flexible - Use all available knowledge', 'thaiprompt-mlm'); ?>
+                                </option>
+                                <option value="strict" <?php selected($response_mode, 'strict'); ?>>
+                                    <?php _e('Strict - Only answer from configured sources', 'thaiprompt-mlm'); ?>
+                                </option>
+                                <option value="moderate" <?php selected($response_mode, 'moderate'); ?>>
+                                    <?php _e('Moderate - Prefer configured sources, supplement with general knowledge', 'thaiprompt-mlm'); ?>
+                                </option>
+                            </select>
+                            <p class="description">
+                                <?php _e('กำหนดว่า AI ควรตอบคำถามอย่างไร:', 'thaiprompt-mlm'); ?><br>
+                                <strong><?php _e('Flexible:', 'thaiprompt-mlm'); ?></strong> <?php _e('ใช้ความรู้ทั้งหมดที่มี', 'thaiprompt-mlm'); ?><br>
+                                <strong><?php _e('Strict:', 'thaiprompt-mlm'); ?></strong> <?php _e('ตอบเฉพาะจากข้อมูลที่กำหนดเท่านั้น', 'thaiprompt-mlm'); ?><br>
+                                <strong><?php _e('Moderate:', 'thaiprompt-mlm'); ?></strong> <?php _e('ใช้ข้อมูลที่กำหนดเป็นหลัก แต่สามารถเสริมด้วยความรู้ทั่วไปได้', 'thaiprompt-mlm'); ?>
+                            </p>
                         </td>
                     </tr>
                 </table>
