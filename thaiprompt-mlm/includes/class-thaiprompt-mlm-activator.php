@@ -470,4 +470,69 @@ class Thaiprompt_MLM_Activator {
             }
         }
     }
+
+    /**
+     * Create default landing page templates
+     */
+    private static function create_default_landing_templates() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'thaiprompt_mlm_landing_templates';
+
+        $templates = array(
+            array(
+                'template_name' => 'Modern Business',
+                'template_description' => 'เทมเพลตธุรกิจสมัยใหม่ พร้อมภาพและคำกระตุ้นการตัดสินใจ',
+                'layout_type' => 'modern',
+                'color_scheme' => 'purple',
+                'default_title' => 'เริ่มต้นธุรกิจออนไลน์กับเรา',
+                'default_headline' => 'สร้างรายได้เสริม ทำงานที่ไหนก็ได้ เมื่อไหร่ก็ได้',
+                'default_description' => 'ร่วมเป็นส่วนหนึ่งของครอบครัว MLM ที่ใหญ่ที่สุด พร้อมระบบที่ทันสมัย รายได้ชัดเจน และโอกาสไม่จำกัด',
+                'default_cta' => 'สมัครเลย',
+                'sort_order' => 1
+            ),
+            array(
+                'template_name' => 'Minimalist',
+                'template_description' => 'เทมเพลตเรียบง่าย เน้นเนื้อหา อ่านง่าย',
+                'layout_type' => 'minimalist',
+                'color_scheme' => 'blue',
+                'default_title' => 'โอกาสทองสำหรับคุณ',
+                'default_headline' => 'เข้าร่วมเครือข่ายธุรกิจที่เติบโตเร็วที่สุด',
+                'default_description' => 'ระบบรายได้แบบหลายชั้น พร้อมการสนับสนุนจากทีมงานมืออาชีพ เริ่มต้นได้ง่าย สร้างรายได้ได้จริง',
+                'default_cta' => 'เข้าร่วมเลย',
+                'sort_order' => 2
+            ),
+            array(
+                'template_name' => 'Bold Impact',
+                'template_description' => 'เทมเพลตสะดุดตา โดดเด่น เหมาะกับการโปรโมท',
+                'layout_type' => 'bold',
+                'color_scheme' => 'green',
+                'default_title' => 'เปลี่ยนชีวิตคุณวันนี้',
+                'default_headline' => 'รายได้ไม่จำกัด ทำงานยืดหยุ่น มีอิสระ',
+                'default_description' => 'ระบบการตลาดแบบเครือข่ายที่ช่วยให้คุณสร้างรายได้แบบ Passive Income พร้อมทีมงานที่พร้อมสนับสนุนตลอดเวลา',
+                'default_cta' => 'ลงทะเบียนฟรี',
+                'sort_order' => 3
+            )
+        );
+
+        foreach ($templates as $template) {
+            $wpdb->insert($table, $template);
+        }
+    }
+
+    /**
+     * Create default wallet top-up products
+     */
+    private static function create_default_topup_products() {
+        // Only if WooCommerce is active
+        if (!class_exists('WC_Product')) {
+            return;
+        }
+
+        // Create products for default amounts
+        $amounts = array(100, 500, 1000, 2000, 5000, 10000);
+
+        foreach ($amounts as $amount) {
+            Thaiprompt_MLM_Wallet_Topup::get_or_create_wallet_product($amount);
+        }
+    }
 }
