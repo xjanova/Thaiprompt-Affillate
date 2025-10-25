@@ -86,11 +86,13 @@ class Thaiprompt_MLM {
          * The class responsible for defining all actions in the admin area
          */
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/class-thaiprompt-mlm-admin.php';
+        require_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/class-thaiprompt-mlm-withdrawal-ajax.php';
 
         /**
          * The class responsible for defining all actions on the public side
          */
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'public/class-thaiprompt-mlm-public.php';
+        require_once THAIPROMPT_MLM_PLUGIN_DIR . 'public/class-thaiprompt-mlm-wallet-ajax.php';
 
         $this->loader = new Thaiprompt_MLM_Loader();
     }
