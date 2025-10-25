@@ -155,6 +155,16 @@ class Thaiprompt_MLM_Admin {
             array($this, 'display_line_settings')
         );
 
+        // AI Configuration
+        add_submenu_page(
+            'thaiprompt-mlm',
+            __('AI Configuration', 'thaiprompt-mlm'),
+            __('AI Configuration', 'thaiprompt-mlm'),
+            'manage_options',
+            'thaiprompt-mlm-ai-configuration',
+            array($this, 'display_ai_configuration')
+        );
+
         // Rich Menu
         add_submenu_page(
             'thaiprompt-mlm',
@@ -257,6 +267,13 @@ class Thaiprompt_MLM_Admin {
      */
     public function display_line_settings() {
         include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/line-settings.php';
+    }
+
+    /**
+     * Display AI Configuration page
+     */
+    public function display_ai_configuration() {
+        include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/ai-configuration.php';
     }
 
     /**
