@@ -2,6 +2,35 @@
 
 All notable changes to Thaiprompt MLM Plugin will be documented in this file.
 
+## [1.4.0] - 2024-01-23
+
+### ✨ New Features - Native Genealogy Tree
+Replaced shortcode-based genealogy with native portal implementation.
+
+### Added
+- ✅ **Native Genealogy Tree** - Built directly into portal without shortcodes
+- ✅ **Interactive Tree Controls** - User selection and depth controls
+- ✅ **AJAX Tree Loading** - Dynamic tree loading with animations
+- ✅ **Public AJAX Handler** - Secure genealogy data endpoint for logged-in users
+- ✅ **Modern Tree Design** - Glassmorphism cards with connection lines
+- ✅ **Tree Animations** - Smooth fade-in and scale effects
+- ✅ **Responsive Tree Layout** - Mobile-friendly column layout
+
+### Removed
+- ❌ **[mlm_genealogy] Shortcode** - No longer needed
+
+### Changed
+- 🔄 **Portal Template** - Updated genealogy tab with native implementation
+- 🔄 **Portal JavaScript** - Added tree rendering and AJAX methods
+- 🔄 **Portal CSS** - Added comprehensive tree styles
+
+### Technical Details
+- Tree data fetched via `wp_ajax_thaiprompt_mlm_get_genealogy_public`
+- Security: Users can only view their own tree or upline
+- Tree nodes show: name, level, personal/group sales, left/right counts
+- Supports up to 10 levels deep
+- Auto-loads on tab switch
+
 ## [1.3.0] - 2024-01-22
 
 ### ⚠️ BREAKING CHANGES - Portal-Only Focus

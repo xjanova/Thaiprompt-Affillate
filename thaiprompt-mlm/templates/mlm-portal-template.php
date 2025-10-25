@@ -28,7 +28,14 @@ $transactions = Thaiprompt_MLM_Wallet::get_transactions($user_id, array('limit' 
 
 // Enqueue portal assets
 wp_enqueue_style('thaiprompt-mlm-portal', THAIPROMPT_MLM_PLUGIN_URL . 'public/css/thaiprompt-mlm-portal.css', array(), THAIPROMPT_MLM_VERSION);
-wp_enqueue_script('thaiprompt-mlm-portal', THAIPROMPT_MLM_PLUGIN_URL . 'public/js/thaiprompt-mlm-portal.js', array('jquery', 'thaiprompt-mlm-public', 'thaiprompt-mlm-genealogy'), THAIPROMPT_MLM_VERSION, true);
+wp_enqueue_script('thaiprompt-mlm-portal', THAIPROMPT_MLM_PLUGIN_URL . 'public/js/thaiprompt-mlm-portal.js', array('jquery'), THAIPROMPT_MLM_VERSION, true);
+
+// Localize script for AJAX
+wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
+    'ajax_url' => admin_url('admin-ajax.php'),
+    'nonce' => wp_create_nonce('thaiprompt_mlm_public_nonce'),
+    'user_id' => $user_id
+));
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -178,8 +185,41 @@ wp_enqueue_script('thaiprompt-mlm-portal', THAIPROMPT_MLM_PLUGIN_URL . 'public/j
                     <h2 style="color: #fff; margin-bottom: 30px; font-size: 32px;">
                         🌳 <?php _e('Genealogy Tree', 'thaiprompt-mlm'); ?>
                     </h2>
+
+                    <div class="mlm-glass-card" style="margin-bottom: 30px; padding: 20px;">
+                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                            <label style="color: #fff;">
+                                <?php _e('View Tree:', 'thaiprompt-mlm'); ?>
+                            </label>
+                            <select id="mlm-genealogy-user" class="mlm-portal-input" style="flex: 1; max-width: 300px;">
+                                <option value="<?php echo $user_id; ?>"><?php echo esc_html($user->display_name); ?> (<?php _e('Me', 'thaiprompt-mlm'); ?>)</option>
+                                <?php if ($position && $position['sponsor_id']): ?>
+                                    <?php $sponsor = get_userdata($position['sponsor_id']); ?>
+                                    <option value="<?php echo $position['sponsor_id']; ?>">
+                                        <?php echo $sponsor ? esc_html($sponsor->display_name) : 'Sponsor'; ?> (<?php _e('My Sponsor', 'thaiprompt-mlm'); ?>)
+                                    </option>
+                                <?php endif; ?>
+                            </select>
+                            <select id="mlm-genealogy-depth" class="mlm-portal-input" style="max-width: 150px;">
+                                <option value="3"><?php _e('3 Levels', 'thaiprompt-mlm'); ?></option>
+                                <option value="5" selected><?php _e('5 Levels', 'thaiprompt-mlm'); ?></option>
+                                <option value="7"><?php _e('7 Levels', 'thaiprompt-mlm'); ?></option>
+                                <option value="10"><?php _e('10 Levels', 'thaiprompt-mlm'); ?></option>
+                            </select>
+                            <button id="mlm-genealogy-refresh" class="mlm-portal-btn" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                🔄 <?php _e('Refresh', 'thaiprompt-mlm'); ?>
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="mlm-glass-card">
-                        <?php echo do_shortcode('[mlm_genealogy]'); ?>
+                        <div id="mlm-genealogy-loading" style="text-align: center; padding: 60px; display: none;">
+                            <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+                            <p style="color: rgba(255,255,255,0.7);"><?php _e('Loading genealogy tree...', 'thaiprompt-mlm'); ?></p>
+                        </div>
+                        <div id="mlm-genealogy-container" style="overflow-x: auto; padding: 40px 20px; min-height: 400px;">
+                            <!-- Genealogy tree will be rendered here -->
+                        </div>
                     </div>
                 </div>
 
