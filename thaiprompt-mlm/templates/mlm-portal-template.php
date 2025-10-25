@@ -446,6 +446,67 @@ wp_enqueue_script('thaiprompt-mlm-portal', THAIPROMPT_MLM_PLUGIN_URL . 'public/j
     </div>
 </div>
 
+<script>
+// Vanilla JavaScript fallback for tab navigation
+(function() {
+    'use strict';
+
+    console.log('MLM Portal: Vanilla JS tab navigation loaded');
+
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPortal);
+    } else {
+        initPortal();
+    }
+
+    function initPortal() {
+        console.log('MLM Portal: Initializing vanilla JS tabs');
+
+        const navLinks = document.querySelectorAll('.mlm-portal-nav-link');
+        const tabContents = document.querySelectorAll('.mlm-portal-tab-content');
+
+        console.log('Found', navLinks.length, 'nav links and', tabContents.length, 'tab contents');
+
+        navLinks.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const tab = this.getAttribute('data-tab');
+                console.log('Tab clicked:', tab);
+
+                // Remove active from all links
+                navLinks.forEach(function(l) {
+                    l.classList.remove('active');
+                });
+
+                // Add active to clicked link
+                this.classList.add('active');
+
+                // Hide all tab contents
+                tabContents.forEach(function(content) {
+                    content.style.display = 'none';
+                    content.classList.remove('active');
+                });
+
+                // Show selected tab content
+                const selectedTab = document.querySelector('[data-tab-content="' + tab + '"]');
+                if (selectedTab) {
+                    selectedTab.style.display = 'block';
+                    selectedTab.classList.add('active');
+
+                    // Scroll to top
+                    const mainContent = document.querySelector('.mlm-portal-main');
+                    if (mainContent) {
+                        mainContent.scrollTop = 0;
+                    }
+                }
+            });
+        });
+    }
+})();
+</script>
+
 <?php wp_footer(); ?>
 </body>
 </html>

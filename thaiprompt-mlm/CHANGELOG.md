@@ -2,6 +2,29 @@
 
 All notable changes to Thaiprompt MLM Plugin will be documented in this file.
 
+## [1.2.1] - 2024-01-21
+
+### Fixed
+- 🐛 **Portal Tab Navigation** - Fixed portal menu tabs not working when clicked
+  - Added vanilla JavaScript fallback for tab navigation
+  - Improved reliability when jQuery loading is delayed
+  - Added console logging for debugging
+  - Tabs now switch smoothly with fade animations
+- 🐛 **Missing Database Method** - Added get_all_ranks() method to Database class
+  - Fixed fatal error: Call to undefined method
+  - Returns all active ranks ordered by rank_order
+  - Required for rank-progress.php partial template
+- 🐛 **Portal Content Display** - All portal tabs now display correctly
+  - Fixed timing issues in tab switching
+  - Improved scroll-to-top behavior
+  - Better active state management
+
+### Technical
+- Vanilla JavaScript tab navigation for better compatibility
+- DOM ready state checking
+- Event delegation for dynamic content
+- Console logging for troubleshooting
+
 ## [1.2.0] - 2024-01-20
 
 ### Added

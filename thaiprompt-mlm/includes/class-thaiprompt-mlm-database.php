@@ -390,6 +390,20 @@ class Thaiprompt_MLM_Database {
     }
 
     /**
+     * Get all ranks ordered by rank_order
+     */
+    public static function get_all_ranks() {
+        global $wpdb;
+        $ranks_table = $wpdb->prefix . 'thaiprompt_mlm_ranks';
+
+        $ranks = $wpdb->get_results(
+            "SELECT * FROM $ranks_table WHERE is_active = 1 ORDER BY rank_order ASC"
+        );
+
+        return $ranks ? $ranks : array();
+    }
+
+    /**
      * Update user rank
      */
     public static function update_user_rank($user_id, $rank_id) {
