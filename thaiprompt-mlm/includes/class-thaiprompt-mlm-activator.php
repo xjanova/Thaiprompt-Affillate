@@ -237,6 +237,81 @@ class Thaiprompt_MLM_Activator {
         ) $charset_collate;";
         dbDelta($sql_landing_pages);
 
+        // Landing Page Versions table
+        $table_landing_versions = $wpdb->prefix . 'thaiprompt_mlm_landing_page_versions';
+        $sql_landing_versions = "CREATE TABLE $table_landing_versions (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            landing_page_id bigint(20) NOT NULL,
+            version int NOT NULL DEFAULT 1,
+            title varchar(255) NOT NULL,
+            headline text NOT NULL,
+            description longtext NOT NULL,
+            image1_url varchar(500) DEFAULT NULL,
+            image2_url varchar(500) DEFAULT NULL,
+            image3_url varchar(500) DEFAULT NULL,
+            cta_text varchar(100) DEFAULT NULL,
+            edited_by bigint(20) NOT NULL,
+            edited_at datetime DEFAULT CURRENT_TIMESTAMP,
+            change_note text DEFAULT NULL,
+            PRIMARY KEY  (id),
+            KEY landing_page_id (landing_page_id),
+            KEY version (version),
+            KEY edited_at (edited_at)
+        ) $charset_collate;";
+        dbDelta($sql_landing_versions);
+
+        // Landing Page Templates table
+        $table_landing_templates = $wpdb->prefix . 'thaiprompt_mlm_landing_templates';
+        $sql_landing_templates = "CREATE TABLE $table_landing_templates (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            template_name varchar(255) NOT NULL,
+            template_description text,
+            thumbnail_url varchar(500) DEFAULT NULL,
+            layout_type varchar(50) DEFAULT 'modern',
+            color_scheme varchar(50) DEFAULT 'purple',
+            default_title varchar(255) NOT NULL,
+            default_headline text NOT NULL,
+            default_description longtext NOT NULL,
+            default_cta varchar(100) DEFAULT 'Join Now',
+            is_active tinyint(1) DEFAULT 1,
+            sort_order int DEFAULT 0,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY is_active (is_active),
+            KEY sort_order (sort_order)
+        ) $charset_collate;";
+        dbDelta($sql_landing_templates);
+
+        // Scheduled Transfers table
+        $table_scheduled_transfers = $wpdb->prefix . 'thaiprompt_mlm_scheduled_transfers';
+        $sql_scheduled_transfers = "CREATE TABLE $table_scheduled_transfers (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            from_user_id bigint(20) DEFAULT NULL,
+            to_user_id bigint(20) NOT NULL,
+            amount decimal(15,2) NOT NULL,
+            schedule_datetime datetime NOT NULL,
+            repeat_type varchar(20) DEFAULT 'once',
+            next_execution_at datetime DEFAULT NULL,
+            note text DEFAULT NULL,
+            status varchar(20) DEFAULT 'pending',
+            created_by bigint(20) NOT NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            last_executed_at datetime DEFAULT NULL,
+            PRIMARY KEY  (id),
+            KEY from_user_id (from_user_id),
+            KEY to_user_id (to_user_id),
+            KEY schedule_datetime (schedule_datetime),
+            KEY status (status),
+            KEY next_execution_at (next_execution_at)
+        ) $charset_collate;";
+        dbDelta($sql_scheduled_transfers);
+
+        // Create default landing page templates
+        self::create_default_landing_templates();
+
+        // Create default top-up products
+        self::create_default_topup_products();
+
         // Update database version
         update_option('thaiprompt_mlm_db_version', THAIPROMPT_MLM_DB_VERSION);
     }

@@ -52,7 +52,9 @@ class Thaiprompt_MLM_Wallet_Topup {
         $product->set_regular_price($amount);
         $product->set_virtual(true); // Virtual product
         $product->set_catalog_visibility('hidden'); // Hide from catalog
-        $product->set_status('private'); // Private status
+        $product->set_status('publish'); // Must be publish to allow purchase
+        $product->set_sold_individually(true); // Only 1 per order
+        $product->set_manage_stock(false); // No stock management
 
         // Add meta to identify as wallet product
         $product->add_meta_data('_mlm_wallet_topup', 'yes', true);
@@ -80,7 +82,7 @@ class Thaiprompt_MLM_Wallet_Topup {
         // Search for existing product
         $args = array(
             'post_type' => 'product',
-            'post_status' => 'private',
+            'post_status' => array('publish', 'private'), // Check both statuses
             'posts_per_page' => 1,
             'meta_query' => array(
                 array(
@@ -98,6 +100,12 @@ class Thaiprompt_MLM_Wallet_Topup {
         $products = get_posts($args);
 
         if (!empty($products)) {
+            // If found but is private, update to publish
+            $product = wc_get_product($products[0]->ID);
+            if ($product && $product->get_status() === 'private') {
+                $product->set_status('publish');
+                $product->save();
+            }
             return $products[0]->ID;
         }
 
