@@ -115,6 +115,16 @@ class Thaiprompt_MLM_Admin {
             array($this, 'display_ranks')
         );
 
+        // Landing Pages
+        add_submenu_page(
+            'thaiprompt-mlm',
+            __('Landing Pages', 'thaiprompt-mlm'),
+            __('Landing Pages', 'thaiprompt-mlm'),
+            'manage_options',
+            'thaiprompt-mlm-landing-pages',
+            array($this, 'display_landing_pages')
+        );
+
         // Reports
         add_submenu_page(
             'thaiprompt-mlm',
@@ -172,6 +182,13 @@ class Thaiprompt_MLM_Admin {
     }
 
     /**
+     * Display landing pages page
+     */
+    public function display_landing_pages() {
+        include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/landing-pages.php';
+    }
+
+    /**
      * Display reports page
      */
     public function display_reports() {
@@ -198,6 +215,8 @@ class Thaiprompt_MLM_Admin {
         add_action('wp_ajax_thaiprompt_mlm_get_genealogy', array($this, 'ajax_get_genealogy'));
         add_action('wp_ajax_thaiprompt_mlm_add_user_to_network', array($this, 'ajax_add_user_to_network'));
         add_action('wp_ajax_thaiprompt_mlm_update_rank', array($this, 'ajax_update_rank'));
+        add_action('wp_ajax_thaiprompt_mlm_approve_landing_page', array($this, 'ajax_approve_landing_page'));
+        add_action('wp_ajax_thaiprompt_mlm_reject_landing_page', array($this, 'ajax_reject_landing_page'));
     }
 
     /**
@@ -322,6 +341,79 @@ class Thaiprompt_MLM_Admin {
             ));
         } else {
             wp_send_json_error(array('message' => __('Failed to update rank', 'thaiprompt-mlm')));
+        }
+    }
+
+    /**
+     * AJAX: Approve landing page
+     */
+    public function ajax_approve_landing_page() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Permission denied', 'thaiprompt-mlm')));
+        }
+
+        $landing_id = intval($_POST['landing_id']);
+        $admin_notes = sanitize_textarea_field($_POST['admin_notes'] ?? '');
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
+
+        $result = $wpdb->update(
+            $table,
+            array(
+                'status' => 'approved',
+                'is_active' => 1,
+                'admin_notes' => $admin_notes,
+                'approved_at' => current_time('mysql'),
+                'approved_by' => get_current_user_id()
+            ),
+            array('id' => $landing_id)
+        );
+
+        if ($result !== false) {
+            wp_send_json_success(array('message' => __('Landing page approved and activated!', 'thaiprompt-mlm')));
+        } else {
+            wp_send_json_error(array('message' => __('Failed to approve landing page', 'thaiprompt-mlm')));
+        }
+    }
+
+    /**
+     * AJAX: Reject landing page
+     */
+    public function ajax_reject_landing_page() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Permission denied', 'thaiprompt-mlm')));
+        }
+
+        $landing_id = intval($_POST['landing_id']);
+        $admin_notes = sanitize_textarea_field($_POST['admin_notes'] ?? '');
+
+        if (empty($admin_notes)) {
+            wp_send_json_error(array('message' => __('Please provide a reason for rejection', 'thaiprompt-mlm')));
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
+
+        $result = $wpdb->update(
+            $table,
+            array(
+                'status' => 'rejected',
+                'is_active' => 0,
+                'admin_notes' => $admin_notes,
+                'approved_by' => get_current_user_id()
+            ),
+            array('id' => $landing_id)
+        );
+
+        if ($result !== false) {
+            wp_send_json_success(array('message' => __('Landing page rejected', 'thaiprompt-mlm')));
+        } else {
+            wp_send_json_error(array('message' => __('Failed to reject landing page', 'thaiprompt-mlm')));
         }
     }
 }
