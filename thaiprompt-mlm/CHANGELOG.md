@@ -2,7 +2,53 @@
 
 All notable changes to Thaiprompt MLM Plugin will be documented in this file.
 
-## [1.7.0] - 2024-01-24 (In Progress)
+## [1.7.1] - 2024-01-25
+
+### ✨ New Features - Debug & Error Logging System
+
+Complete debug and error logging system for troubleshooting and support.
+
+### Added - Debug System
+- ✅ **Logger Class** - Complete error tracking and logging system
+- ✅ **Error Handlers** - PHP error, exception, and fatal error capture
+- ✅ **Auto-rotation** - Log files rotate at 5MB to prevent disk space issues
+- ✅ **Security Protection** - .htaccess protection prevents direct log access
+- ✅ **Admin Page** - Beautiful interface for viewing logs
+- ✅ **Log Viewer** - Color-coded log display with dark theme
+- ✅ **Download Logs** - One-click download for sharing with support
+- ✅ **Clear Logs** - Clear individual or all log files
+- ✅ **Statistics** - Total files, size, and error count
+- ✅ **Log Levels** - Debug, Info, Warning, Error, Critical
+- ✅ **Context Data** - Additional context information for debugging
+- ✅ **Stack Traces** - Full stack traces for exceptions
+- ✅ **User Tracking** - Logs include user ID when available
+- ✅ **Monthly Rotation** - Automatic monthly log file organization
+
+### Technical Implementation
+- Logger class: class-thaiprompt-mlm-logger.php
+- Log directory: wp-content/uploads/thaiprompt-mlm-logs/
+- Protected by .htaccess and index.php
+- Monthly log rotation (error-log-YYYY-MM.txt)
+- Automatic file size rotation (5MB max)
+- PSR-3 compliant logging methods
+- Error handler registration
+- Shutdown function for fatal errors
+- AJAX handlers for download and clear
+- Admin menu integration
+
+### Usage Examples
+```php
+// Log an error
+Thaiprompt_MLM_Logger::error('Payment failed', array('user_id' => 123));
+
+// Log a warning
+Thaiprompt_MLM_Logger::warning('API rate limit approaching');
+
+// Log debug info (only if THAIPROMPT_MLM_DEBUG is true)
+Thaiprompt_MLM_Logger::debug('Processing commission', array('amount' => 100));
+```
+
+## [1.7.0] - 2024-01-24
 
 ### ✨ New Features - Landing Page Builder (Phase 1)
 
