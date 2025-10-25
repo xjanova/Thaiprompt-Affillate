@@ -285,6 +285,12 @@ class Thaiprompt_MLM_Activator {
      */
     private static function create_pages() {
         $pages = array(
+            'portal' => array(
+                'title' => __('MLM Portal', 'thaiprompt-mlm'),
+                'content' => '',
+                'slug' => 'mlm-portal',
+                'template' => 'mlm-portal-template.php'
+            ),
             'mlm_dashboard' => array(
                 'title' => __('MLM Dashboard', 'thaiprompt-mlm'),
                 'content' => '[mlm_dashboard]',
@@ -343,6 +349,11 @@ class Thaiprompt_MLM_Activator {
                 if ($page_id) {
                     // Save page ID
                     update_option('thaiprompt_mlm_page_' . $page_key, $page_id);
+
+                    // Set page template if specified
+                    if (isset($page_data['template'])) {
+                        update_post_meta($page_id, '_wp_page_template', $page_data['template']);
+                    }
                 }
             }
         }

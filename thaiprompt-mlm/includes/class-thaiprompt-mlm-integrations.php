@@ -38,6 +38,7 @@ class Thaiprompt_MLM_Integrations {
         // Add MLM tab to My Account
         add_filter('woocommerce_account_menu_items', array(__CLASS__, 'add_mlm_menu_items'));
         add_action('init', array(__CLASS__, 'add_mlm_endpoints'));
+        add_action('woocommerce_account_mlm-portal_endpoint', array(__CLASS__, 'mlm_portal_content'));
         add_action('woocommerce_account_mlm-dashboard_endpoint', array(__CLASS__, 'mlm_dashboard_content'));
         add_action('woocommerce_account_mlm-network_endpoint', array(__CLASS__, 'mlm_network_content'));
         add_action('woocommerce_account_mlm-wallet_endpoint', array(__CLASS__, 'mlm_wallet_content'));
@@ -219,7 +220,11 @@ class Thaiprompt_MLM_Integrations {
      * Add MLM menu items to My Account
      */
     public static function add_mlm_menu_items($items) {
+        // Get portal page URL
+        $portal_page_id = get_option('thaiprompt_mlm_page_portal');
+
         $mlm_items = array(
+            'mlm-portal' => __('MLM Portal', 'thaiprompt-mlm'),
             'mlm-dashboard' => __('MLM Dashboard', 'thaiprompt-mlm'),
             'mlm-network' => __('My Network', 'thaiprompt-mlm'),
             'mlm-wallet' => __('My Wallet', 'thaiprompt-mlm')
@@ -238,9 +243,23 @@ class Thaiprompt_MLM_Integrations {
      * Add MLM endpoints
      */
     public static function add_mlm_endpoints() {
+        add_rewrite_endpoint('mlm-portal', EP_ROOT | EP_PAGES);
         add_rewrite_endpoint('mlm-dashboard', EP_ROOT | EP_PAGES);
         add_rewrite_endpoint('mlm-network', EP_ROOT | EP_PAGES);
         add_rewrite_endpoint('mlm-wallet', EP_ROOT | EP_PAGES);
+    }
+
+    /**
+     * MLM Portal content - redirect to portal page
+     */
+    public static function mlm_portal_content() {
+        $portal_page_id = get_option('thaiprompt_mlm_page_portal');
+        if ($portal_page_id) {
+            wp_redirect(get_permalink($portal_page_id));
+            exit;
+        } else {
+            echo '<p>' . __('Portal page not found. Please contact administrator.', 'thaiprompt-mlm') . '</p>';
+        }
     }
 
     /**
