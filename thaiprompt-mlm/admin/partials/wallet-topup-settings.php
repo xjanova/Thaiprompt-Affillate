@@ -11,24 +11,30 @@ if (!defined('ABSPATH')) {
 
 // Handle form submission
 if (isset($_POST['save_topup_settings']) && check_admin_referer('thaiprompt_mlm_topup_settings')) {
-    $amounts = array();
+    $topup_data = array();
 
-    // Collect amounts from form
+    // Collect amounts and colors from form
     if (isset($_POST['topup_amounts']) && is_array($_POST['topup_amounts'])) {
-        foreach ($_POST['topup_amounts'] as $amount) {
+        $amounts = $_POST['topup_amounts'];
+        $colors = isset($_POST['topup_colors']) ? $_POST['topup_colors'] : array();
+
+        foreach ($amounts as $index => $amount) {
             $amount = floatval($amount);
             if ($amount > 0) {
-                $amounts[] = $amount;
+                $topup_data[] = array(
+                    'amount' => $amount,
+                    'color' => isset($colors[$index]) ? sanitize_hex_color($colors[$index]) : '#10b981'
+                );
             }
         }
     }
 
-    // Save amounts
-    $saved = Thaiprompt_MLM_Wallet_Topup::save_topup_amounts($amounts);
+    // Save topup data
+    $saved = Thaiprompt_MLM_Wallet_Topup::save_topup_data($topup_data);
 
     echo '<div class="notice notice-success"><p>✅ ' . sprintf(__('Saved %d top-up amounts successfully!', 'thaiprompt-mlm'), count($saved)) . '</p></div>';
 
-    Thaiprompt_MLM_Logger::info('Wallet top-up settings updated', array('amounts' => $saved));
+    Thaiprompt_MLM_Logger::info('Wallet top-up settings updated', array('data' => $saved));
 }
 
 // Handle create products action
@@ -38,7 +44,13 @@ if (isset($_POST['create_products']) && check_admin_referer('thaiprompt_mlm_topu
 }
 
 // Get current settings
-$amounts = Thaiprompt_MLM_Wallet_Topup::get_topup_amounts();
+$topup_data = Thaiprompt_MLM_Wallet_Topup::get_topup_data();
+
+// For backward compatibility, get amounts for display
+$amounts = array();
+foreach ($topup_data as $data) {
+    $amounts[] = isset($data['amount']) ? $data['amount'] : $data;
+}
 ?>
 
 <div class="wrap">
@@ -113,13 +125,20 @@ $amounts = Thaiprompt_MLM_Wallet_Topup::get_topup_amounts();
                     <?php _e('Configure the predefined amounts that users can choose to top-up their wallet. Virtual products will be created automatically for each amount.', 'thaiprompt-mlm'); ?>
                 </p>
 
-                <div id="topup-amounts-list" style="max-width: 600px;">
-                    <?php foreach ($amounts as $index => $amount): ?>
-                    <div class="topup-amount-row" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+                <div id="topup-amounts-list" style="max-width: 800px;">
+                    <?php foreach ($topup_data as $index => $data):
+                        $amount = isset($data['amount']) ? $data['amount'] : $data;
+                        $color = isset($data['color']) ? $data['color'] : '#10b981';
+                    ?>
+                    <div class="topup-amount-row" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid <?php echo esc_attr($color); ?>;">
                         <span style="color: #666; font-weight: 600; min-width: 30px;">#<?php echo $index + 1; ?></span>
                         <span style="color: #666; font-size: 18px;">฿</span>
-                        <input type="number" name="topup_amounts[]" value="<?php echo esc_attr($amount); ?>" step="0.01" min="1" class="regular-text" placeholder="<?php _e('Amount', 'thaiprompt-mlm'); ?>" style="max-width: 200px;" required>
-                        <button type="button" class="button remove-amount-btn" style="color: #dc3545;">
+                        <input type="number" name="topup_amounts[]" value="<?php echo esc_attr($amount); ?>" step="0.01" min="1" class="regular-text" placeholder="<?php _e('Amount', 'thaiprompt-mlm'); ?>" style="max-width: 150px;" required>
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <label style="font-size: 11px; color: #666; font-weight: 600;"><?php _e('Button Color', 'thaiprompt-mlm'); ?></label>
+                            <input type="color" name="topup_colors[]" value="<?php echo esc_attr($color); ?>" class="topup-color-picker" style="width: 80px; height: 40px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;">
+                        </div>
+                        <button type="button" class="button remove-amount-btn" style="color: #dc3545; margin-left: auto;">
                             ❌ <?php _e('Remove', 'thaiprompt-mlm'); ?>
                         </button>
                     </div>
@@ -217,11 +236,16 @@ jQuery(document).ready(function($) {
     // Add new amount field
     $('#add-amount-btn').on('click', function() {
         var index = $('#topup-amounts-list .topup-amount-row').length + 1;
-        var row = '<div class="topup-amount-row" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">' +
+        var defaultColor = '#10b981';
+        var row = '<div class="topup-amount-row" style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center; background: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid ' + defaultColor + ';">' +
             '<span style="color: #666; font-weight: 600; min-width: 30px;">#' + index + '</span>' +
             '<span style="color: #666; font-size: 18px;">฿</span>' +
-            '<input type="number" name="topup_amounts[]" value="" step="0.01" min="1" class="regular-text" placeholder="<?php _e('Amount', 'thaiprompt-mlm'); ?>" style="max-width: 200px;" required>' +
-            '<button type="button" class="button remove-amount-btn" style="color: #dc3545;">❌ <?php _e('Remove', 'thaiprompt-mlm'); ?></button>' +
+            '<input type="number" name="topup_amounts[]" value="" step="0.01" min="1" class="regular-text" placeholder="<?php _e('Amount', 'thaiprompt-mlm'); ?>" style="max-width: 150px;" required>' +
+            '<div style="display: flex; flex-direction: column; gap: 5px;">' +
+            '<label style="font-size: 11px; color: #666; font-weight: 600;"><?php _e('Button Color', 'thaiprompt-mlm'); ?></label>' +
+            '<input type="color" name="topup_colors[]" value="' + defaultColor + '" class="topup-color-picker" style="width: 80px; height: 40px; border: 2px solid #ddd; border-radius: 4px; cursor: pointer;">' +
+            '</div>' +
+            '<button type="button" class="button remove-amount-btn" style="color: #dc3545; margin-left: auto;">❌ <?php _e('Remove', 'thaiprompt-mlm'); ?></button>' +
             '</div>';
 
         $('#topup-amounts-list').append(row);
@@ -236,6 +260,12 @@ jQuery(document).ready(function($) {
         } else {
             alert('<?php _e('You must have at least one top-up amount', 'thaiprompt-mlm'); ?>');
         }
+    });
+
+    // Update border color when color picker changes
+    $(document).on('change', '.topup-color-picker', function() {
+        var color = $(this).val();
+        $(this).closest('.topup-amount-row').css('border-left-color', color);
     });
 
     // Update row numbers
@@ -285,11 +315,12 @@ jQuery(document).ready(function($) {
     color: #333;
 }
 
+.topup-amount-row {
+    transition: all 0.2s ease;
+}
+
 .topup-amount-row:hover {
-    background: #f9f9f9;
-    padding: 10px;
-    border-radius: 4px;
-    margin-left: -10px;
-    margin-right: -10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
 }
 </style>

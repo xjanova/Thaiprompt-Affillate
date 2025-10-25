@@ -562,13 +562,25 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
 
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
                             <?php
-                            $topup_amounts = Thaiprompt_MLM_Wallet_Topup::get_topup_amounts();
-                            foreach ($topup_amounts as $amount):
+                            $topup_data = Thaiprompt_MLM_Wallet_Topup::get_topup_data();
+                            foreach ($topup_data as $data):
+                                $amount = isset($data['amount']) ? $data['amount'] : $data;
+                                $color = isset($data['color']) ? $data['color'] : '#10b981';
+
+                                // Generate lighter and darker shades for gradient
+                                $color_rgb = sscanf($color, "#%02x%02x%02x");
+                                $darker = sprintf("#%02x%02x%02x",
+                                    max(0, $color_rgb[0] - 30),
+                                    max(0, $color_rgb[1] - 30),
+                                    max(0, $color_rgb[2] - 30)
+                                );
+
                                 $topup_url = Thaiprompt_MLM_Wallet_Topup::get_topup_url($user_id, $amount);
                             ?>
                             <a href="<?php echo esc_url($topup_url); ?>"
                                class="mlm-topup-card"
-                               style="background: linear-gradient(145deg, #10b981, #059669);
+                               data-color="<?php echo esc_attr($color); ?>"
+                               style="background: linear-gradient(145deg, <?php echo esc_attr($color); ?>, <?php echo esc_attr($darker); ?>);
                                       border: none;
                                       border-radius: 16px;
                                       padding: 30px 20px;
@@ -578,7 +590,7 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                                       display: block;
                                       position: relative;
                                       transform: translateY(0);
-                                      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3),
+                                      box-shadow: 0 10px 25px <?php echo esc_attr($color); ?>4d,
                                                   0 5px 10px rgba(0, 0, 0, 0.2),
                                                   inset 0 1px 0 rgba(255, 255, 255, 0.3),
                                                   inset 0 -1px 0 rgba(0, 0, 0, 0.1);">
@@ -1360,13 +1372,23 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
             });
         }
 
+        // Helper function to convert hex to rgba
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
         // 3D Top-up Card Effects
         const topupCards = document.querySelectorAll('.mlm-topup-card');
         topupCards.forEach(function(card) {
+            const cardColor = card.getAttribute('data-color') || '#10b981';
+
             // Hover effect
             card.addEventListener('mouseenter', function() {
                 this.style.transform = 'translateY(-8px) scale(1.05)';
-                this.style.boxShadow = '0 20px 40px rgba(16, 185, 129, 0.4), 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.1)';
+                this.style.boxShadow = `0 20px 40px ${hexToRgba(cardColor, 0.4)}, 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.1)`;
 
                 // Emoji bounce
                 const emoji = this.querySelector('div:first-child');
@@ -1383,7 +1405,7 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
 
             card.addEventListener('mouseleave', function() {
                 this.style.transform = 'translateY(0) scale(1)';
-                this.style.boxShadow = '0 10px 25px rgba(16, 185, 129, 0.3), 0 5px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.1)';
+                this.style.boxShadow = `0 10px 25px ${hexToRgba(cardColor, 0.3)}, 0 5px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.1)`;
 
                 // Emoji reset
                 const emoji = this.querySelector('div:first-child');
@@ -1401,12 +1423,12 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
             // Active (click) effect
             card.addEventListener('mousedown', function() {
                 this.style.transform = 'translateY(-2px) scale(0.98)';
-                this.style.boxShadow = '0 5px 15px rgba(16, 185, 129, 0.3), 0 2px 5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.2)';
+                this.style.boxShadow = `0 5px 15px ${hexToRgba(cardColor, 0.3)}, 0 2px 5px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.2)`;
             });
 
             card.addEventListener('mouseup', function() {
                 this.style.transform = 'translateY(-8px) scale(1.05)';
-                this.style.boxShadow = '0 20px 40px rgba(16, 185, 129, 0.4), 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.1)';
+                this.style.boxShadow = `0 20px 40px ${hexToRgba(cardColor, 0.4)}, 0 10px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.1)`;
             });
         });
     }
