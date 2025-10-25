@@ -38,12 +38,12 @@ $commission_stats = $wpdb->get_row($wpdb->prepare("
 ", $date_from . ' 00:00:00', $date_to . ' 23:59:59'));
 
 // Top performers
-$top_performers = $wpdb->get_results($wpdb->prepare("
+$top_performers = $wpdb->get_results("
     SELECT user_id, personal_sales, group_sales
     FROM $network_table
     ORDER BY group_sales DESC
     LIMIT 10
-"));
+");
 
 // Commission by type
 $commission_by_type = $wpdb->get_results($wpdb->prepare("
