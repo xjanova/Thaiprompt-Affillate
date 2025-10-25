@@ -16,22 +16,44 @@ if (!$landing_id) {
 global $wpdb;
 $table = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
 
+// Check if this is preview mode
+$is_preview = isset($_GET['preview']) && $_GET['preview'] === 'true';
+
 // Get landing page
-$landing_page = $wpdb->get_row($wpdb->prepare(
-    "SELECT * FROM $table WHERE id = %d AND status = 'approved' AND is_active = 1",
-    $landing_id
-));
+if ($is_preview) {
+    // Preview mode - get page regardless of status (but verify owner if not admin)
+    $landing_page = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table WHERE id = %d",
+        $landing_id
+    ));
+
+    // Verify owner or admin
+    if ($landing_page && !current_user_can('manage_options')) {
+        if (!is_user_logged_in() || get_current_user_id() != $landing_page->user_id) {
+            wp_redirect(home_url());
+            exit;
+        }
+    }
+} else {
+    // Normal mode - only show approved and active pages
+    $landing_page = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table WHERE id = %d AND status = 'approved' AND is_active = 1",
+        $landing_id
+    ));
+}
 
 if (!$landing_page) {
     wp_redirect(home_url());
     exit;
 }
 
-// Track view (increment views counter)
-$wpdb->query($wpdb->prepare(
-    "UPDATE $table SET views = views + 1 WHERE id = %d",
-    $landing_id
-));
+// Track view (increment views counter) - but not in preview mode
+if (!$is_preview) {
+    $wpdb->query($wpdb->prepare(
+        "UPDATE $table SET views = views + 1 WHERE id = %d",
+        $landing_id
+    ));
+}
 
 // Get creator info
 $creator = get_userdata($landing_page->user_id);
@@ -237,9 +259,55 @@ setcookie('mlm_landing_id', $landing_id, time() + (30 * 24 * 60 * 60), '/');
         .landing-cta-section {
             animation-delay: 0.6s;
         }
+
+        /* Preview Mode Banner */
+        .preview-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #fff;
+            padding: 15px 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .preview-banner-status {
+            padding: 4px 12px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 14px;
+        }
+
+        body.preview-mode {
+            padding-top: 70px;
+        }
     </style>
 </head>
-<body>
+<body <?php echo $is_preview ? 'class="preview-mode"' : ''; ?>>
+    <?php if ($is_preview): ?>
+        <div class="preview-banner">
+            <span>👁️ <?php _e('Preview Mode', 'thaiprompt-mlm'); ?></span>
+            <?php
+            $status_labels = array(
+                'pending' => __('⏳ Pending Approval', 'thaiprompt-mlm'),
+                'approved' => __('✅ Approved', 'thaiprompt-mlm'),
+                'rejected' => __('❌ Rejected', 'thaiprompt-mlm')
+            );
+            ?>
+            <span class="preview-banner-status">
+                <?php echo $status_labels[$landing_page->status] ?? $status_labels['pending']; ?>
+            </span>
+        </div>
+    <?php endif; ?>
     <div class="landing-container">
         <!-- Header -->
         <div class="landing-header">
