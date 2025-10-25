@@ -25,6 +25,26 @@ class Thaiprompt_MLM_Activator {
     }
 
     /**
+     * Upgrade database only (for auto-updates without flushing rewrite rules)
+     */
+    public static function upgrade_database() {
+        // Create/update database tables
+        self::create_tables();
+
+        // Create default ranks if they don't exist
+        global $wpdb;
+        $table_ranks = $wpdb->prefix . 'thaiprompt_mlm_ranks';
+        $rank_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_ranks");
+
+        if ($rank_count == 0) {
+            self::create_default_ranks();
+        }
+
+        // Create pages if they don't exist
+        self::create_pages();
+    }
+
+    /**
      * Create database tables
      */
     private static function create_tables() {
