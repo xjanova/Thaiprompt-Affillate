@@ -175,6 +175,16 @@ class Thaiprompt_MLM_Admin {
             array($this, 'display_rich_menu_builder')
         );
 
+        // Flex Message Builder
+        add_submenu_page(
+            'thaiprompt-mlm',
+            __('Flex Message Builder', 'thaiprompt-mlm'),
+            __('Flex Message Builder', 'thaiprompt-mlm'),
+            'manage_options',
+            'thaiprompt-mlm-flex-message-builder',
+            array($this, 'display_flex_message_builder')
+        );
+
         // Debug Logs
         add_submenu_page(
             'thaiprompt-mlm',
@@ -261,6 +271,13 @@ class Thaiprompt_MLM_Admin {
      */
     public function display_rich_menu_builder() {
         include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/rich-menu-builder.php';
+    }
+
+    /**
+     * Display Flex Message Builder page
+     */
+    public function display_flex_message_builder() {
+        include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/flex-message-builder.php';
     }
 
     /**
