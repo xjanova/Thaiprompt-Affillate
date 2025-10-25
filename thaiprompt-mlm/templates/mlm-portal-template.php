@@ -25,26 +25,109 @@ $slideshow_speed = isset($settings['portal_slideshow_speed']) ? intval($settings
 // Replace {name} with user's display name
 $subtitle_text = str_replace('{name}', $user->display_name, $subtitle_text);
 
-// Get MLM data
-$position = Thaiprompt_MLM_Network::get_user_position($user_id);
-$team_stats = Thaiprompt_MLM_Network::get_team_stats($user_id);
-$wallet_stats = Thaiprompt_MLM_Wallet::get_wallet_stats($user_id);
-$rank = Thaiprompt_MLM_Database::get_user_rank($user_id);
-$rank_progress = Thaiprompt_MLM_Rank::get_rank_progress($user_id);
-$referrals = Thaiprompt_MLM_Network::get_direct_referrals($user_id);
-$referral_link = Thaiprompt_MLM_Referral::get_referral_link($user_id);
-$referral_code = Thaiprompt_MLM_Referral::get_code($user_id);
-$qr_code_url = Thaiprompt_MLM_Referral::get_qr_code_url($user_id);
-$sponsor_info = Thaiprompt_MLM_Referral::get_sponsor_info($user_id);
-$commissions = Thaiprompt_MLM_Database::get_user_commissions($user_id, array('limit' => 20));
-$commission_stats = Thaiprompt_MLM_Commission::get_commission_summary($user_id);
-$wallet = Thaiprompt_MLM_Wallet::get_balance($user_id);
-$transactions = Thaiprompt_MLM_Wallet::get_transactions($user_id, array('limit' => 10));
+// Get MLM data with error handling
+try {
+    $position = Thaiprompt_MLM_Network::get_user_position($user_id);
+} catch (Exception $e) {
+    $position = null;
+    error_log('Portal Error - get_user_position: ' . $e->getMessage());
+}
+
+try {
+    $team_stats = Thaiprompt_MLM_Network::get_team_stats($user_id);
+} catch (Exception $e) {
+    $team_stats = array('left_leg_sales' => 0, 'right_leg_sales' => 0, 'total_members' => 0);
+    error_log('Portal Error - get_team_stats: ' . $e->getMessage());
+}
+
+try {
+    $wallet_stats = Thaiprompt_MLM_Wallet::get_wallet_stats($user_id);
+} catch (Exception $e) {
+    $wallet_stats = array();
+    error_log('Portal Error - get_wallet_stats: ' . $e->getMessage());
+}
+
+try {
+    $rank = Thaiprompt_MLM_Database::get_user_rank($user_id);
+} catch (Exception $e) {
+    $rank = null;
+    error_log('Portal Error - get_user_rank: ' . $e->getMessage());
+}
+
+try {
+    $rank_progress = Thaiprompt_MLM_Rank::get_rank_progress($user_id);
+} catch (Exception $e) {
+    $rank_progress = array('next_rank' => null, 'progress' => 0, 'requirements_met' => array());
+    error_log('Portal Error - get_rank_progress: ' . $e->getMessage());
+}
+
+try {
+    $referrals = Thaiprompt_MLM_Network::get_direct_referrals($user_id);
+} catch (Exception $e) {
+    $referrals = array();
+    error_log('Portal Error - get_direct_referrals: ' . $e->getMessage());
+}
+
+try {
+    $referral_link = Thaiprompt_MLM_Referral::get_referral_link($user_id);
+    $referral_code = Thaiprompt_MLM_Referral::get_code($user_id);
+    $qr_code_url = Thaiprompt_MLM_Referral::get_qr_code_url($user_id);
+    $sponsor_info = Thaiprompt_MLM_Referral::get_sponsor_info($user_id);
+} catch (Exception $e) {
+    $referral_link = home_url('?ref=' . $user_id);
+    $referral_code = 'REF' . $user_id;
+    $qr_code_url = '';
+    $sponsor_info = null;
+    error_log('Portal Error - get_referral_info: ' . $e->getMessage());
+}
+
+try {
+    $commissions = Thaiprompt_MLM_Database::get_user_commissions($user_id, array('limit' => 20));
+} catch (Exception $e) {
+    $commissions = array();
+    error_log('Portal Error - get_user_commissions: ' . $e->getMessage());
+}
+
+try {
+    $commission_stats = Thaiprompt_MLM_Commission::get_commission_summary($user_id);
+} catch (Exception $e) {
+    $commission_stats = array('total_earned' => 0, 'pending' => 0, 'total_transactions' => 0);
+    error_log('Portal Error - get_commission_summary: ' . $e->getMessage());
+}
+
+try {
+    $wallet = Thaiprompt_MLM_Wallet::get_balance($user_id);
+    // Ensure wallet object has required properties
+    if (!$wallet) {
+        $wallet = (object) array('balance' => 0, 'pending_balance' => 0);
+    }
+    if (!isset($wallet->balance)) {
+        $wallet->balance = 0;
+    }
+    if (!isset($wallet->pending_balance)) {
+        $wallet->pending_balance = 0;
+    }
+} catch (Exception $e) {
+    $wallet = (object) array('balance' => 0, 'pending_balance' => 0);
+    error_log('Portal Error - get_balance: ' . $e->getMessage());
+}
+
+try {
+    $transactions = Thaiprompt_MLM_Wallet::get_transactions($user_id, array('limit' => 10));
+} catch (Exception $e) {
+    $transactions = array();
+    error_log('Portal Error - get_transactions: ' . $e->getMessage());
+}
 
 // Get user's landing page
 global $wpdb;
-$landing_pages_table = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
-$landing_page = $wpdb->get_row($wpdb->prepare("SELECT * FROM $landing_pages_table WHERE user_id = %d ORDER BY id DESC LIMIT 1", $user_id));
+$landing_page = null;
+try {
+    $landing_pages_table = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
+    $landing_page = $wpdb->get_row($wpdb->prepare("SELECT * FROM $landing_pages_table WHERE user_id = %d ORDER BY id DESC LIMIT 1", $user_id));
+} catch (Exception $e) {
+    error_log('Portal Error - get_landing_page: ' . $e->getMessage());
+}
 
 // Enqueue portal assets
 wp_enqueue_style('thaiprompt-mlm-portal', THAIPROMPT_MLM_PLUGIN_URL . 'public/css/thaiprompt-mlm-portal.css', array(), THAIPROMPT_MLM_VERSION);
@@ -399,13 +482,13 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                     <div class="mlm-portal-stats">
                         <div class="mlm-stat-card">
                             <div class="mlm-stat-icon">👈</div>
-                            <div class="mlm-stat-value"><?php echo wc_price($team_stats['left_leg_sales']); ?></div>
+                            <div class="mlm-stat-value">฿<?php echo number_format($team_stats['left_leg_sales'] ?? 0, 2); ?></div>
                             <div class="mlm-stat-label"><?php _e('Left Leg Sales', 'thaiprompt-mlm'); ?></div>
                         </div>
 
                         <div class="mlm-stat-card">
                             <div class="mlm-stat-icon">👉</div>
-                            <div class="mlm-stat-value"><?php echo wc_price($team_stats['right_leg_sales']); ?></div>
+                            <div class="mlm-stat-value">฿<?php echo number_format($team_stats['right_leg_sales'] ?? 0, 2); ?></div>
                             <div class="mlm-stat-label"><?php _e('Right Leg Sales', 'thaiprompt-mlm'); ?></div>
                         </div>
                     </div>
@@ -428,8 +511,8 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                                     <tr>
                                         <td><?php echo esc_html($referral['name']); ?></td>
                                         <td><?php echo date_i18n(get_option('date_format'), strtotime($referral['joined_date'])); ?></td>
-                                        <td><?php echo wc_price($referral['personal_sales']); ?></td>
-                                        <td><?php echo wc_price($referral['group_sales']); ?></td>
+                                        <td>฿<?php echo number_format($referral['personal_sales'] ?? 0, 2); ?></td>
+                                        <td>฿<?php echo number_format($referral['group_sales'] ?? 0, 2); ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -452,10 +535,10 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                     <div class="mlm-glass-card" style="text-align: center; margin-bottom: 30px; padding: 50px;">
                         <div class="mlm-stat-label" style="margin-bottom: 15px;"><?php _e('Available Balance', 'thaiprompt-mlm'); ?></div>
                         <div class="mlm-stat-value mlm-wallet-balance" style="font-size: 56px; margin-bottom: 20px;">
-                            <?php echo wc_price($wallet->balance ?? 0); ?>
+                            ฿<?php echo number_format($wallet->balance ?? 0, 2); ?>
                         </div>
                         <div style="color: rgba(255,255,255,0.7); margin-bottom: 30px;">
-                            <?php printf(__('Pending: %s', 'thaiprompt-mlm'), wc_price($wallet->pending_balance ?? 0)); ?>
+                            <?php printf(__('Pending: ฿%s', 'thaiprompt-mlm'), number_format($wallet->pending_balance ?? 0, 2)); ?>
                         </div>
                         <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                             <button class="mlm-portal-btn mlm-withdraw-btn">
@@ -495,7 +578,7 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                                       display: block;">
                                 <div style="font-size: 28px; margin-bottom: 10px;">💵</div>
                                 <div style="color: #fff; font-size: 24px; font-weight: bold; margin-bottom: 5px;">
-                                    <?php echo wc_price($amount); ?>
+                                    ฿<?php echo number_format($amount, 2); ?>
                                 </div>
                                 <div style="color: rgba(255,255,255,0.6); font-size: 13px;">
                                     <?php _e('Top-up', 'thaiprompt-mlm'); ?>
@@ -639,7 +722,7 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                                     <tr>
                                         <td><?php echo esc_html($transaction->transaction_type); ?></td>
                                         <td style="color: <?php echo $transaction->amount >= 0 ? '#10b981' : '#ef4444'; ?>;">
-                                            <?php echo ($transaction->amount >= 0 ? '+' : '') . wc_price(abs($transaction->amount)); ?>
+                                            <?php echo ($transaction->amount >= 0 ? '+' : '-') . '฿' . number_format(abs($transaction->amount), 2); ?>
                                         </td>
                                         <td><?php echo date_i18n(get_option('date_format'), strtotime($transaction->created_at)); ?></td>
                                         <td>
@@ -704,7 +787,7 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                                     <?php foreach ($commissions as $commission): ?>
                                     <tr>
                                         <td><code><?php echo esc_html($commission->commission_type); ?></code></td>
-                                        <td><strong><?php echo wc_price($commission->amount); ?></strong></td>
+                                        <td><strong>฿<?php echo number_format($commission->amount, 2); ?></strong></td>
                                         <td><?php echo $commission->level ? 'L' . $commission->level : '-'; ?></td>
                                         <td><?php echo date_i18n(get_option('date_format'), strtotime($commission->created_at)); ?></td>
                                         <td>
@@ -730,24 +813,24 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                         🏆 <?php _e('Rank Progress', 'thaiprompt-mlm'); ?>
                     </h2>
 
-                    <?php if ($rank_progress['next_rank']): ?>
+                    <?php if ($rank_progress && isset($rank_progress['next_rank']) && $rank_progress['next_rank']): ?>
                     <div class="mlm-glass-card">
                         <div style="text-align: center; margin-bottom: 40px;">
                             <h3 style="color: #fff; margin-bottom: 20px;"><?php _e('Current Rank', 'thaiprompt-mlm'); ?></h3>
-                            <div style="display: inline-block; padding: 15px 40px; border-radius: 50px; background: <?php echo esc_attr($rank->rank_color); ?>; color: #fff; font-size: 28px; font-weight: 800;">
-                                <?php echo esc_html($rank->rank_name); ?>
+                            <div style="display: inline-block; padding: 15px 40px; border-radius: 50px; background: <?php echo $rank && isset($rank->rank_color) ? esc_attr($rank->rank_color) : '#6366f1'; ?>; color: #fff; font-size: 28px; font-weight: 800;">
+                                <?php echo $rank && isset($rank->rank_name) ? esc_html($rank->rank_name) : __('Member', 'thaiprompt-mlm'); ?>
                             </div>
                         </div>
 
                         <div style="text-align: center; margin: 40px 0;">
                             <div style="font-size: 48px; margin-bottom: 10px;">⬇️</div>
-                            <h4 style="color: #fff;"><?php printf(__('Next: %s', 'thaiprompt-mlm'), $rank_progress['next_rank']['name']); ?></h4>
+                            <h4 style="color: #fff;"><?php printf(__('Next: %s', 'thaiprompt-mlm'), esc_html($rank_progress['next_rank']['name'])); ?></h4>
                         </div>
 
                         <div style="margin-bottom: 30px;">
                             <div class="mlm-progress-bar">
-                                <div class="mlm-progress-fill" data-progress="<?php echo $rank_progress['progress']; ?>" style="display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700;">
-                                    <?php echo round($rank_progress['progress']); ?>%
+                                <div class="mlm-progress-fill" data-progress="<?php echo isset($rank_progress['progress']) ? $rank_progress['progress'] : 0; ?>" style="display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700;">
+                                    <?php echo isset($rank_progress['progress']) ? round($rank_progress['progress']) : 0; ?>%
                                 </div>
                             </div>
                         </div>
@@ -756,30 +839,30 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                             <div class="mlm-glass-card" style="text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); margin-bottom: 10px;"><?php _e('Personal Sales', 'thaiprompt-mlm'); ?></div>
                                 <div style="color: #fff; font-size: 20px; font-weight: 700;">
-                                    <?php echo wc_price($rank_progress['requirements_met']['personal_sales']['current']); ?>
+                                    ฿<?php echo isset($rank_progress['requirements_met']['personal_sales']['current']) ? number_format($rank_progress['requirements_met']['personal_sales']['current'], 2) : '0.00'; ?>
                                 </div>
                                 <div style="color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 5px;">
-                                    / <?php echo wc_price($rank_progress['requirements_met']['personal_sales']['required']); ?>
+                                    / ฿<?php echo isset($rank_progress['requirements_met']['personal_sales']['required']) ? number_format($rank_progress['requirements_met']['personal_sales']['required'], 2) : '0.00'; ?>
                                 </div>
                             </div>
 
                             <div class="mlm-glass-card" style="text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); margin-bottom: 10px;"><?php _e('Group Sales', 'thaiprompt-mlm'); ?></div>
                                 <div style="color: #fff; font-size: 20px; font-weight: 700;">
-                                    <?php echo wc_price($rank_progress['requirements_met']['group_sales']['current']); ?>
+                                    ฿<?php echo isset($rank_progress['requirements_met']['group_sales']['current']) ? number_format($rank_progress['requirements_met']['group_sales']['current'], 2) : '0.00'; ?>
                                 </div>
                                 <div style="color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 5px;">
-                                    / <?php echo wc_price($rank_progress['requirements_met']['group_sales']['required']); ?>
+                                    / ฿<?php echo isset($rank_progress['requirements_met']['group_sales']['required']) ? number_format($rank_progress['requirements_met']['group_sales']['required'], 2) : '0.00'; ?>
                                 </div>
                             </div>
 
                             <div class="mlm-glass-card" style="text-align: center;">
                                 <div style="color: rgba(255,255,255,0.7); margin-bottom: 10px;"><?php _e('Active Legs', 'thaiprompt-mlm'); ?></div>
                                 <div style="color: #fff; font-size: 20px; font-weight: 700;">
-                                    <?php echo number_format($rank_progress['requirements_met']['active_legs']['current']); ?>
+                                    <?php echo isset($rank_progress['requirements_met']['active_legs']['current']) ? number_format($rank_progress['requirements_met']['active_legs']['current']) : '0'; ?>
                                 </div>
                                 <div style="color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 5px;">
-                                    / <?php echo number_format($rank_progress['requirements_met']['active_legs']['required']); ?>
+                                    / <?php echo isset($rank_progress['requirements_met']['active_legs']['required']) ? number_format($rank_progress['requirements_met']['active_legs']['required']) : '0'; ?>
                                 </div>
                             </div>
                         </div>
