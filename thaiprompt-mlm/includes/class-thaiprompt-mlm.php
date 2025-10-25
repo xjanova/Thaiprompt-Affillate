@@ -61,6 +61,11 @@ class Thaiprompt_MLM {
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-logger.php';
 
         /**
+         * LINE Bot Integration
+         */
+        require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-line-bot.php';
+
+        /**
          * Core functionality classes
          */
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-database.php';
