@@ -144,6 +144,16 @@ class Thaiprompt_MLM_Admin {
             'thaiprompt-mlm-settings',
             array($this, 'display_settings')
         );
+
+        // Debug Logs
+        add_submenu_page(
+            'thaiprompt-mlm',
+            __('Debug Logs', 'thaiprompt-mlm'),
+            __('Debug Logs', 'thaiprompt-mlm'),
+            'manage_options',
+            'thaiprompt-mlm-debug-logs',
+            array($this, 'display_debug_logs')
+        );
     }
 
     /**
@@ -203,6 +213,13 @@ class Thaiprompt_MLM_Admin {
     }
 
     /**
+     * Display debug logs page
+     */
+    public function display_debug_logs() {
+        include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/debug-logs.php';
+    }
+
+    /**
      * Register settings
      */
     public function register_settings() {
@@ -217,6 +234,9 @@ class Thaiprompt_MLM_Admin {
         add_action('wp_ajax_thaiprompt_mlm_update_rank', array($this, 'ajax_update_rank'));
         add_action('wp_ajax_thaiprompt_mlm_approve_landing_page', array($this, 'ajax_approve_landing_page'));
         add_action('wp_ajax_thaiprompt_mlm_reject_landing_page', array($this, 'ajax_reject_landing_page'));
+        add_action('wp_ajax_thaiprompt_mlm_download_log', array($this, 'ajax_download_log'));
+        add_action('wp_ajax_thaiprompt_mlm_clear_log', array($this, 'ajax_clear_log'));
+        add_action('wp_ajax_thaiprompt_mlm_clear_all_logs', array($this, 'ajax_clear_all_logs'));
     }
 
     /**
@@ -414,6 +434,88 @@ class Thaiprompt_MLM_Admin {
             wp_send_json_success(array('message' => __('Landing page rejected', 'thaiprompt-mlm')));
         } else {
             wp_send_json_error(array('message' => __('Failed to reject landing page', 'thaiprompt-mlm')));
+        }
+    }
+
+    /**
+     * AJAX: Download log file
+     */
+    public function ajax_download_log() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied', 'thaiprompt-mlm'));
+        }
+
+        $log_file = isset($_GET['log_file']) ? sanitize_text_field($_GET['log_file']) : '';
+
+        if (empty($log_file) || !file_exists($log_file)) {
+            wp_die(__('Log file not found', 'thaiprompt-mlm'));
+        }
+
+        // Security: Ensure file is in the correct directory
+        $upload_dir = wp_upload_dir();
+        $log_dir = $upload_dir['basedir'] . '/thaiprompt-mlm-logs';
+
+        if (strpos(realpath($log_file), realpath($log_dir)) !== 0) {
+            wp_die(__('Invalid log file', 'thaiprompt-mlm'));
+        }
+
+        // Send file for download
+        header('Content-Type: text/plain');
+        header('Content-Disposition: attachment; filename="' . basename($log_file) . '"');
+        header('Content-Length: ' . filesize($log_file));
+        header('Cache-Control: no-cache');
+
+        readfile($log_file);
+        exit;
+    }
+
+    /**
+     * AJAX: Clear single log file
+     */
+    public function ajax_clear_log() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Permission denied', 'thaiprompt-mlm')));
+        }
+
+        $log_file = isset($_POST['log_file']) ? sanitize_text_field($_POST['log_file']) : '';
+
+        if (empty($log_file)) {
+            wp_send_json_error(array('message' => __('No log file specified', 'thaiprompt-mlm')));
+        }
+
+        // Security: Ensure file is in the correct directory
+        $upload_dir = wp_upload_dir();
+        $log_dir = $upload_dir['basedir'] . '/thaiprompt-mlm-logs';
+
+        if (strpos(realpath($log_file), realpath($log_dir)) !== 0) {
+            wp_send_json_error(array('message' => __('Invalid log file', 'thaiprompt-mlm')));
+        }
+
+        if (Thaiprompt_MLM_Logger::clear_log($log_file)) {
+            wp_send_json_success(array('message' => __('Log file cleared successfully', 'thaiprompt-mlm')));
+        } else {
+            wp_send_json_error(array('message' => __('Failed to clear log file', 'thaiprompt-mlm')));
+        }
+    }
+
+    /**
+     * AJAX: Clear all log files
+     */
+    public function ajax_clear_all_logs() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('Permission denied', 'thaiprompt-mlm')));
+        }
+
+        if (Thaiprompt_MLM_Logger::clear_all_logs()) {
+            wp_send_json_success(array('message' => __('All log files cleared successfully', 'thaiprompt-mlm')));
+        } else {
+            wp_send_json_error(array('message' => __('Failed to clear log files', 'thaiprompt-mlm')));
         }
     }
 }

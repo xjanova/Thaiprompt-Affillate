@@ -27,9 +27,18 @@ class Thaiprompt_MLM {
         $this->plugin_name = 'thaiprompt-mlm';
 
         $this->load_dependencies();
+        $this->init_logger();
         $this->set_locale();
         $this->define_admin_hooks();
         $this->define_public_hooks();
+    }
+
+    /**
+     * Initialize the logger
+     */
+    private function init_logger() {
+        Thaiprompt_MLM_Logger::init();
+        Thaiprompt_MLM_Logger::info('Plugin initialized successfully');
     }
 
     /**
@@ -45,6 +54,11 @@ class Thaiprompt_MLM {
          * The class responsible for defining internationalization functionality
          */
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-i18n.php';
+
+        /**
+         * The logger class for error tracking and debugging
+         */
+        require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-logger.php';
 
         /**
          * Core functionality classes
