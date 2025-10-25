@@ -155,6 +155,26 @@ class Thaiprompt_MLM_Admin {
             array($this, 'display_line_settings')
         );
 
+        // Rich Menu
+        add_submenu_page(
+            'thaiprompt-mlm',
+            __('Rich Menu', 'thaiprompt-mlm'),
+            __('Rich Menu', 'thaiprompt-mlm'),
+            'manage_options',
+            'thaiprompt-mlm-rich-menu',
+            array($this, 'display_rich_menu')
+        );
+
+        // Rich Menu Builder (hidden from menu)
+        add_submenu_page(
+            null, // hidden from menu
+            __('Rich Menu Builder', 'thaiprompt-mlm'),
+            __('Rich Menu Builder', 'thaiprompt-mlm'),
+            'manage_options',
+            'thaiprompt-mlm-rich-menu-builder',
+            array($this, 'display_rich_menu_builder')
+        );
+
         // Debug Logs
         add_submenu_page(
             'thaiprompt-mlm',
@@ -227,6 +247,20 @@ class Thaiprompt_MLM_Admin {
      */
     public function display_line_settings() {
         include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/line-settings.php';
+    }
+
+    /**
+     * Display Rich Menu page
+     */
+    public function display_rich_menu() {
+        include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/rich-menu.php';
+    }
+
+    /**
+     * Display Rich Menu Builder page
+     */
+    public function display_rich_menu_builder() {
+        include_once THAIPROMPT_MLM_PLUGIN_DIR . 'admin/partials/rich-menu-builder.php';
     }
 
     /**
