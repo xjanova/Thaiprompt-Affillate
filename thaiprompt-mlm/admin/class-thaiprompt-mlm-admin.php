@@ -322,6 +322,17 @@ class Thaiprompt_MLM_Admin {
         add_action('wp_ajax_thaiprompt_mlm_download_log', array($this, 'ajax_download_log'));
         add_action('wp_ajax_thaiprompt_mlm_clear_log', array($this, 'ajax_clear_log'));
         add_action('wp_ajax_thaiprompt_mlm_clear_all_logs', array($this, 'ajax_clear_all_logs'));
+
+        // Wallet management AJAX handlers
+        add_action('wp_ajax_mlm_admin_search_user', array($this, 'ajax_admin_search_user'));
+        add_action('wp_ajax_mlm_admin_wallet_operation', array($this, 'ajax_admin_wallet_operation'));
+        add_action('wp_ajax_mlm_schedule_transfer', array($this, 'ajax_schedule_transfer'));
+        add_action('wp_ajax_mlm_get_scheduled_transfers', array($this, 'ajax_get_scheduled_transfers'));
+        add_action('wp_ajax_mlm_cancel_scheduled_transfer', array($this, 'ajax_cancel_scheduled_transfer'));
+
+        // Withdrawal with slip upload
+        add_action('wp_ajax_mlm_approve_withdrawal', array($this, 'ajax_approve_withdrawal_with_slip'));
+        add_action('wp_ajax_mlm_reject_withdrawal', array($this, 'ajax_reject_withdrawal_request'));
     }
 
     /**
@@ -602,5 +613,326 @@ class Thaiprompt_MLM_Admin {
         } else {
             wp_send_json_error(array('message' => __('Failed to clear log files', 'thaiprompt-mlm')));
         }
+    }
+
+    /**
+     * AJAX: Admin search user
+     */
+    public function ajax_admin_search_user() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'thaiprompt-mlm'));
+        }
+
+        $query = isset($_POST['query']) ? sanitize_text_field($_POST['query']) : '';
+
+        if (empty($query)) {
+            wp_send_json_error(__('Search query is required', 'thaiprompt-mlm'));
+        }
+
+        // Search users by username, email, or meta
+        $args = array(
+            'search' => '*' . $query . '*',
+            'search_columns' => array('user_login', 'user_email', 'display_name'),
+            'number' => 10
+        );
+
+        $user_query = new WP_User_Query($args);
+        $users = $user_query->get_results();
+
+        $results = array();
+        foreach ($users as $user) {
+            $wallet = Thaiprompt_MLM_Wallet::get_balance($user->ID);
+            $results[] = array(
+                'ID' => $user->ID,
+                'user_login' => $user->user_login,
+                'user_email' => $user->user_email,
+                'display_name' => $user->display_name,
+                'balance' => $wallet ? wc_price($wallet->balance) : wc_price(0)
+            );
+        }
+
+        wp_send_json_success(array('users' => $results));
+    }
+
+    /**
+     * AJAX: Admin wallet operation
+     */
+    public function ajax_admin_wallet_operation() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'thaiprompt-mlm'));
+        }
+
+        $type = isset($_POST['type']) ? sanitize_text_field($_POST['type']) : '';
+        $from_user = isset($_POST['from_user']) ? sanitize_text_field($_POST['from_user']) : '';
+        $to_user = isset($_POST['to_user']) ? sanitize_text_field($_POST['to_user']) : '';
+        $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
+        $note = isset($_POST['note']) ? sanitize_textarea_field($_POST['note']) : '';
+
+        if (empty($to_user) || $amount <= 0) {
+            wp_send_json_error(__('Invalid parameters', 'thaiprompt-mlm'));
+        }
+
+        // Resolve user IDs
+        $to_user_id = is_numeric($to_user) ? intval($to_user) : $this->resolve_user($to_user);
+
+        if (!$to_user_id) {
+            wp_send_json_error(__('Recipient user not found', 'thaiprompt-mlm'));
+        }
+
+        $result = null;
+
+        switch ($type) {
+            case 'add':
+                $result = Thaiprompt_MLM_Wallet::add_funds($to_user_id, $amount, $note ?: 'Admin credit');
+                if (!is_wp_error($result)) {
+                    wp_send_json_success(array('message' => sprintf(__('Added %s to user wallet', 'thaiprompt-mlm'), wc_price($amount))));
+                }
+                break;
+
+            case 'deduct':
+                $result = Thaiprompt_MLM_Wallet::deduct_funds($to_user_id, $amount, $note ?: 'Admin debit');
+                if (!is_wp_error($result)) {
+                    wp_send_json_success(array('message' => sprintf(__('Deducted %s from user wallet', 'thaiprompt-mlm'), wc_price($amount))));
+                }
+                break;
+
+            case 'transfer':
+                if (empty($from_user)) {
+                    wp_send_json_error(__('Sender is required for transfers', 'thaiprompt-mlm'));
+                }
+                $from_user_id = is_numeric($from_user) ? intval($from_user) : $this->resolve_user($from_user);
+
+                if (!$from_user_id) {
+                    wp_send_json_error(__('Sender user not found', 'thaiprompt-mlm'));
+                }
+
+                $result = Thaiprompt_MLM_Wallet::transfer_funds($from_user_id, $to_user_id, $amount, $note);
+                if (!is_wp_error($result)) {
+                    wp_send_json_success(array('message' => __('Transfer completed successfully', 'thaiprompt-mlm')));
+                }
+                break;
+
+            default:
+                wp_send_json_error(__('Invalid operation type', 'thaiprompt-mlm'));
+        }
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+    }
+
+    /**
+     * AJAX: Schedule transfer
+     */
+    public function ajax_schedule_transfer() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'thaiprompt-mlm'));
+        }
+
+        $from_user = isset($_POST['from_user']) ? sanitize_text_field($_POST['from_user']) : '';
+        $to_user = isset($_POST['to_user']) ? sanitize_text_field($_POST['to_user']) : '';
+        $amount = isset($_POST['amount']) ? floatval($_POST['amount']) : 0;
+        $schedule_datetime = isset($_POST['schedule_datetime']) ? sanitize_text_field($_POST['schedule_datetime']) : '';
+        $repeat = isset($_POST['repeat']) ? sanitize_text_field($_POST['repeat']) : 'once';
+        $note = isset($_POST['note']) ? sanitize_textarea_field($_POST['note']) : '';
+
+        if (empty($to_user) || $amount <= 0 || empty($schedule_datetime)) {
+            wp_send_json_error(__('Missing required fields', 'thaiprompt-mlm'));
+        }
+
+        // Resolve user IDs
+        $to_user_id = is_numeric($to_user) ? intval($to_user) : $this->resolve_user($to_user);
+        if (!$to_user_id) {
+            wp_send_json_error(__('Recipient user not found', 'thaiprompt-mlm'));
+        }
+
+        $from_user_id = null;
+        if (!empty($from_user)) {
+            $from_user_id = is_numeric($from_user) ? intval($from_user) : $this->resolve_user($from_user);
+            if (!$from_user_id) {
+                wp_send_json_error(__('Sender user not found', 'thaiprompt-mlm'));
+            }
+        }
+
+        // Convert datetime-local format to MySQL datetime
+        $mysql_datetime = str_replace('T', ' ', $schedule_datetime) . ':00';
+
+        $data = array(
+            'from_user_id' => $from_user_id,
+            'to_user_id' => $to_user_id,
+            'amount' => $amount,
+            'schedule_datetime' => $mysql_datetime,
+            'repeat_type' => $repeat,
+            'note' => $note
+        );
+
+        $result = Thaiprompt_MLM_Scheduled_Transfer::schedule($data);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success(array('message' => __('Transfer scheduled successfully', 'thaiprompt-mlm')));
+    }
+
+    /**
+     * AJAX: Get scheduled transfers
+     */
+    public function ajax_get_scheduled_transfers() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'thaiprompt-mlm'));
+        }
+
+        $transfers = Thaiprompt_MLM_Scheduled_Transfer::get_all();
+
+        $results = array();
+        foreach ($transfers as $transfer) {
+            $from_user = $transfer->from_user_id ? get_userdata($transfer->from_user_id) : null;
+            $to_user = get_userdata($transfer->to_user_id);
+
+            $results[] = array(
+                'id' => $transfer->id,
+                'from_user' => $from_user ? $from_user->display_name : null,
+                'to_user' => $to_user ? $to_user->display_name : 'Unknown',
+                'amount' => wc_price($transfer->amount),
+                'schedule_datetime' => date('Y-m-d H:i', strtotime($transfer->schedule_datetime)),
+                'repeat_type' => ucfirst($transfer->repeat_type),
+                'status' => $transfer->status
+            );
+        }
+
+        wp_send_json_success(array('transfers' => $results));
+    }
+
+    /**
+     * AJAX: Cancel scheduled transfer
+     */
+    public function ajax_cancel_scheduled_transfer() {
+        check_ajax_referer('thaiprompt_mlm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'thaiprompt-mlm'));
+        }
+
+        $schedule_id = isset($_POST['schedule_id']) ? intval($_POST['schedule_id']) : 0;
+
+        if (!$schedule_id) {
+            wp_send_json_error(__('Invalid schedule ID', 'thaiprompt-mlm'));
+        }
+
+        $result = Thaiprompt_MLM_Scheduled_Transfer::cancel($schedule_id);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success(array('message' => __('Scheduled transfer cancelled', 'thaiprompt-mlm')));
+    }
+
+    /**
+     * AJAX: Approve withdrawal with slip upload
+     */
+    public function ajax_approve_withdrawal_with_slip() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mlm_withdrawal_action')) {
+            wp_send_json_error(__('Invalid security token', 'thaiprompt-mlm'));
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'thaiprompt-mlm'));
+        }
+
+        $withdrawal_id = isset($_POST['withdrawal_id']) ? intval($_POST['withdrawal_id']) : 0;
+        $notes = isset($_POST['notes']) ? sanitize_textarea_field($_POST['notes']) : '';
+
+        if (!$withdrawal_id) {
+            wp_send_json_error(__('Invalid withdrawal ID', 'thaiprompt-mlm'));
+        }
+
+        // Handle file upload
+        $slip_attachment_id = 0;
+        if (isset($_FILES['slip']) && $_FILES['slip']['error'] === UPLOAD_ERR_OK) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            require_once(ABSPATH . 'wp-admin/includes/image.php');
+            require_once(ABSPATH . 'wp-admin/includes/media.php');
+
+            $uploaded = media_handle_upload('slip', 0);
+
+            if (is_wp_error($uploaded)) {
+                wp_send_json_error($uploaded->get_error_message());
+            }
+
+            $slip_attachment_id = $uploaded;
+        } else {
+            wp_send_json_error(__('Transfer slip is required', 'thaiprompt-mlm'));
+        }
+
+        $result = Thaiprompt_MLM_Wallet::approve_withdrawal($withdrawal_id, $slip_attachment_id, $notes);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success(array('message' => __('Withdrawal approved and notification sent via LINE', 'thaiprompt-mlm')));
+    }
+
+    /**
+     * AJAX: Reject withdrawal request
+     */
+    public function ajax_reject_withdrawal_request() {
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'mlm_withdrawal_action')) {
+            wp_send_json_error(__('Invalid security token', 'thaiprompt-mlm'));
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'thaiprompt-mlm'));
+        }
+
+        $withdrawal_id = isset($_POST['withdrawal_id']) ? intval($_POST['withdrawal_id']) : 0;
+        $reason = isset($_POST['reason']) ? sanitize_textarea_field($_POST['reason']) : '';
+
+        if (!$withdrawal_id || empty($reason)) {
+            wp_send_json_error(__('Withdrawal ID and reason are required', 'thaiprompt-mlm'));
+        }
+
+        $result = Thaiprompt_MLM_Wallet::reject_withdrawal($withdrawal_id, $reason);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error($result->get_error_message());
+        }
+
+        wp_send_json_success(array('message' => __('Withdrawal rejected', 'thaiprompt-mlm')));
+    }
+
+    /**
+     * Helper: Resolve user from username or email
+     */
+    private function resolve_user($identifier) {
+        if (is_numeric($identifier)) {
+            return intval($identifier);
+        }
+
+        // Try username
+        $user = get_user_by('login', $identifier);
+        if ($user) {
+            return $user->ID;
+        }
+
+        // Try email
+        $user = get_user_by('email', $identifier);
+        if ($user) {
+            return $user->ID;
+        }
+
+        return false;
     }
 }

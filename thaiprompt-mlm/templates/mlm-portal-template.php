@@ -512,6 +512,44 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                     </div>
                     <?php endif; ?>
 
+                    <!-- Service Fees Information -->
+                    <div class="mlm-glass-card" style="margin-bottom: 30px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.1)); border: 2px solid rgba(59, 130, 246, 0.3);">
+                        <h3 style="color: #fff; margin-bottom: 20px;">💰 <?php _e('Service Fees', 'thaiprompt-mlm'); ?></h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 8px;">💸 <?php _e('Transfer Fee', 'thaiprompt-mlm'); ?></div>
+                                <div style="color: #fff; font-size: 24px; font-weight: 700; margin-bottom: 5px;">
+                                    <?php echo number_format(floatval(get_option('thaiprompt_mlm_transfer_fee_percent', 0)), 2); ?>%
+                                </div>
+                                <?php if (floatval(get_option('thaiprompt_mlm_transfer_fee_fixed', 0)) > 0): ?>
+                                <div style="color: rgba(255,255,255,0.6); font-size: 12px;">
+                                    + <?php echo wc_price(floatval(get_option('thaiprompt_mlm_transfer_fee_fixed', 0))); ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 8px;">💳 <?php _e('Withdrawal Fee', 'thaiprompt-mlm'); ?></div>
+                                <div style="color: #fff; font-size: 24px; font-weight: 700; margin-bottom: 5px;">
+                                    <?php echo number_format(floatval(get_option('thaiprompt_mlm_withdrawal_fee_percent', 0)), 2); ?>%
+                                </div>
+                                <?php if (floatval(get_option('thaiprompt_mlm_withdrawal_fee_fixed', 0)) > 0): ?>
+                                <div style="color: rgba(255,255,255,0.6); font-size: 12px;">
+                                    + <?php echo wc_price(floatval(get_option('thaiprompt_mlm_withdrawal_fee_fixed', 0))); ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 8px;">💳 <?php _e('Top-up Fee', 'thaiprompt-mlm'); ?></div>
+                                <div style="color: #10b981; font-size: 24px; font-weight: 700;">
+                                    <?php _e('FREE', 'thaiprompt-mlm'); ?>
+                                </div>
+                                <div style="color: rgba(255,255,255,0.6); font-size: 12px;">
+                                    <?php _e('No fees', 'thaiprompt-mlm'); ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Transfer Funds -->
                     <div class="mlm-glass-card" style="margin-bottom: 30px;">
                         <h3 style="color: #fff; margin-bottom: 20px;">💸 <?php _e('Transfer Funds', 'thaiprompt-mlm'); ?></h3>
@@ -1104,10 +1142,18 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
             });
         }
 
-        // Withdraw Button Handler
+        // Withdraw Button Handler with KYC Check
         const withdrawBtn = document.querySelector('.mlm-withdraw-btn');
         if (withdrawBtn) {
             withdrawBtn.addEventListener('click', function() {
+                // Check KYC status first
+                const kycStatus = '<?php echo get_user_meta(get_current_user_id(), 'kyc_verified', true); ?>';
+
+                if (!kycStatus || kycStatus !== '1') {
+                    alert('⚠️ <?php _e('KYC Verification Required', 'thaiprompt-mlm'); ?>\n\n<?php _e('You must complete KYC verification before withdrawing funds. Please contact LINE support to verify your identity.', 'thaiprompt-mlm'); ?>');
+                    return;
+                }
+
                 const amount = prompt('<?php _e('Enter amount to withdraw:', 'thaiprompt-mlm'); ?>');
 
                 if (!amount) return;
@@ -1118,7 +1164,13 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                     return;
                 }
 
-                if (!confirm('<?php _e('Withdraw', 'thaiprompt-mlm'); ?> ฿' + amountNum.toFixed(2) + '?\n\n<?php _e('Note: Requires LINE verification. Admin will process manually.', 'thaiprompt-mlm'); ?>')) {
+                // Show fees info
+                const feePercent = <?php echo floatval(get_option('thaiprompt_mlm_withdrawal_fee_percent', 0)); ?>;
+                const feeFixed = <?php echo floatval(get_option('thaiprompt_mlm_withdrawal_fee_fixed', 0)); ?>;
+                const feeAmount = (amountNum * feePercent / 100) + feeFixed;
+                const receiveAmount = amountNum - feeAmount;
+
+                if (!confirm('<?php _e('Withdraw', 'thaiprompt-mlm'); ?> ฿' + amountNum.toFixed(2) + '?\n\n<?php _e('Withdrawal Fee:', 'thaiprompt-mlm'); ?> ฿' + feeAmount.toFixed(2) + '\n<?php _e('You will receive:', 'thaiprompt-mlm'); ?> ฿' + receiveAmount.toFixed(2) + '\n\n<?php _e('Note: Requires LINE verification. Admin will process manually.', 'thaiprompt-mlm'); ?>')) {
                     return;
                 }
 
@@ -1151,6 +1203,69 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                     alert('❌ <?php _e('An error occurred. Please try again.', 'thaiprompt-mlm'); ?>');
                     withdrawBtn.disabled = false;
                     withdrawBtn.innerHTML = '<?php _e('Withdraw Funds', 'thaiprompt-mlm'); ?>';
+                });
+            });
+        }
+
+        // Landing Page Edit Button
+        const editLandingBtn = document.querySelector('.mlm-edit-landing-btn');
+        if (editLandingBtn) {
+            editLandingBtn.addEventListener('click', function() {
+                const formCard = document.querySelector('.mlm-landing-page-form');
+                if (formCard) {
+                    formCard.style.display = 'block';
+                    formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
+
+        // Landing Page Cancel Edit Button
+        const cancelEditBtn = document.querySelector('.mlm-cancel-edit-btn');
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', function() {
+                const formCard = document.querySelector('.mlm-landing-page-form');
+                if (formCard) {
+                    formCard.style.display = 'none';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        }
+
+        // Landing Page Form Submission
+        const landingPageForm = document.getElementById('mlm-landing-page-form');
+        if (landingPageForm) {
+            landingPageForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const submitBtn = landingPageForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ <?php _e('Saving...', 'thaiprompt-mlm'); ?>';
+
+                // Use FormData for file uploads
+                const formData = new FormData(landingPageForm);
+
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.data.message);
+                        if (data.data.redirect) {
+                            location.reload();
+                        }
+                    } else {
+                        alert('❌ ' + (data.data.message || data.data));
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    alert('❌ <?php _e('An error occurred. Please try again.', 'thaiprompt-mlm'); ?>');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
                 });
             });
         }

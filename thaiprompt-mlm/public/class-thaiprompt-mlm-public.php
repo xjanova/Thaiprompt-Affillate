@@ -149,6 +149,7 @@ class Thaiprompt_MLM_Public {
         $table = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
 
         // Verify ownership if editing
+        $existing = null;
         if ($landing_id > 0) {
             $existing = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d AND user_id = %d", $landing_id, $user_id));
             if (!$existing) {
@@ -209,6 +210,11 @@ class Thaiprompt_MLM_Public {
 
         // Save or update
         if ($landing_id > 0) {
+            // Create version before updating (if editing existing)
+            if ($existing) {
+                Thaiprompt_MLM_Landing_Page_Version::create_version($landing_id, $existing, $data, $user_id);
+            }
+
             $result = $wpdb->update($table, $data, array('id' => $landing_id, 'user_id' => $user_id));
         } else {
             $result = $wpdb->insert($table, $data);
@@ -219,7 +225,8 @@ class Thaiprompt_MLM_Public {
             Thaiprompt_MLM_Logger::info('Landing page saved', array(
                 'user_id' => $user_id,
                 'landing_id' => $landing_id,
-                'title' => $data['title']
+                'title' => $data['title'],
+                'is_edit' => $existing ? true : false
             ));
 
             wp_send_json_success(array(

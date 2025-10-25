@@ -70,21 +70,36 @@ $stats = $wpdb->get_row("
         </div>
     </div>
 
-    <!-- Status Tabs -->
+    <!-- Main Tabs -->
+    <?php $current_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'withdrawals'; ?>
     <h2 class="nav-tab-wrapper">
-        <a href="?page=thaiprompt-mlm-wallet&status=pending" class="nav-tab <?php echo $status_filter === 'pending' ? 'nav-tab-active' : ''; ?>">
-            <?php _e('Pending', 'thaiprompt-mlm'); ?>
+        <a href="?page=thaiprompt-mlm-wallet&tab=withdrawals" class="nav-tab <?php echo $current_tab === 'withdrawals' ? 'nav-tab-active' : ''; ?>">
+            💸 <?php _e('Withdrawal Requests', 'thaiprompt-mlm'); ?>
         </a>
-        <a href="?page=thaiprompt-mlm-wallet&status=completed" class="nav-tab <?php echo $status_filter === 'completed' ? 'nav-tab-active' : ''; ?>">
-            <?php _e('Completed', 'thaiprompt-mlm'); ?>
+        <a href="?page=thaiprompt-mlm-wallet&tab=manage" class="nav-tab <?php echo $current_tab === 'manage' ? 'nav-tab-active' : ''; ?>">
+            ⚙️ <?php _e('Manage Wallets', 'thaiprompt-mlm'); ?>
         </a>
-        <a href="?page=thaiprompt-mlm-wallet&status=rejected" class="nav-tab <?php echo $status_filter === 'rejected' ? 'nav-tab-active' : ''; ?>">
-            <?php _e('Rejected', 'thaiprompt-mlm'); ?>
-        </a>
-        <a href="?page=thaiprompt-mlm-wallet&status=" class="nav-tab <?php echo $status_filter === '' ? 'nav-tab-active' : ''; ?>">
-            <?php _e('All', 'thaiprompt-mlm'); ?>
+        <a href="?page=thaiprompt-mlm-wallet&tab=scheduled" class="nav-tab <?php echo $current_tab === 'scheduled' ? 'nav-tab-active' : ''; ?>">
+            ⏰ <?php _e('Scheduled Transfers', 'thaiprompt-mlm'); ?>
         </a>
     </h2>
+
+    <?php if ($current_tab === 'withdrawals'): ?>
+    <!-- Status Sub-Tabs -->
+    <h3 class="nav-tab-wrapper" style="margin-top: 20px;">
+        <a href="?page=thaiprompt-mlm-wallet&tab=withdrawals&status=pending" class="nav-tab <?php echo $status_filter === 'pending' ? 'nav-tab-active' : ''; ?>">
+            <?php _e('Pending', 'thaiprompt-mlm'); ?>
+        </a>
+        <a href="?page=thaiprompt-mlm-wallet&tab=withdrawals&status=completed" class="nav-tab <?php echo $status_filter === 'completed' ? 'nav-tab-active' : ''; ?>">
+            <?php _e('Completed', 'thaiprompt-mlm'); ?>
+        </a>
+        <a href="?page=thaiprompt-mlm-wallet&tab=withdrawals&status=rejected" class="nav-tab <?php echo $status_filter === 'rejected' ? 'nav-tab-active' : ''; ?>">
+            <?php _e('Rejected', 'thaiprompt-mlm'); ?>
+        </a>
+        <a href="?page=thaiprompt-mlm-wallet&tab=withdrawals&status=" class="nav-tab <?php echo $status_filter === '' ? 'nav-tab-active' : ''; ?>">
+            <?php _e('All', 'thaiprompt-mlm'); ?>
+        </a>
+    </h3>
 
     <!-- Withdrawals Table -->
     <table class="wp-list-table widefat fixed striped">
@@ -203,6 +218,157 @@ $stats = $wpdb->get_row("
                 echo $page_links;
                 ?>
             </span>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php elseif ($current_tab === 'manage'): ?>
+    <!-- Manage Wallets Tab -->
+    <div style="margin-top: 20px;">
+        <!-- Search User -->
+        <div class="postbox">
+            <div class="postbox-header">
+                <h2>🔍 <?php _e('Search Member', 'thaiprompt-mlm'); ?></h2>
+            </div>
+            <div class="inside" style="padding: 20px;">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="text" id="mlm-search-user" class="regular-text" placeholder="<?php _e('Enter username, email, or referral code...', 'thaiprompt-mlm'); ?>">
+                    <button type="button" id="mlm-search-user-btn" class="button button-primary">
+                        🔍 <?php _e('Search', 'thaiprompt-mlm'); ?>
+                    </button>
+                </div>
+                <div id="mlm-user-search-results" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+
+        <!-- Quick Transfer -->
+        <div class="postbox" style="margin-top: 20px;">
+            <div class="postbox-header">
+                <h2>💸 <?php _e('Quick Transfer (Admin)', 'thaiprompt-mlm'); ?></h2>
+            </div>
+            <div class="inside" style="padding: 20px;">
+                <form id="mlm-admin-transfer-form">
+                    <table class="form-table">
+                        <tr>
+                            <th><label><?php _e('From User', 'thaiprompt-mlm'); ?>:</label></th>
+                            <td>
+                                <input type="text" id="admin-transfer-from" class="regular-text" placeholder="<?php _e('Username or User ID', 'thaiprompt-mlm'); ?>" required>
+                                <p class="description"><?php _e('Leave empty for system credit (no sender)', 'thaiprompt-mlm'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label><?php _e('To User', 'thaiprompt-mlm'); ?>: <span style="color:red;">*</span></label></th>
+                            <td>
+                                <input type="text" id="admin-transfer-to" class="regular-text" placeholder="<?php _e('Username or User ID', 'thaiprompt-mlm'); ?>" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label><?php _e('Amount', 'thaiprompt-mlm'); ?>: <span style="color:red;">*</span></label></th>
+                            <td>
+                                <input type="number" id="admin-transfer-amount" step="0.01" min="0.01" class="regular-text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label><?php _e('Note', 'thaiprompt-mlm'); ?>:</label></th>
+                            <td>
+                                <textarea id="admin-transfer-note" class="large-text" rows="3" placeholder="<?php _e('Reason for transfer...', 'thaiprompt-mlm'); ?>"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label><?php _e('Transaction Type', 'thaiprompt-mlm'); ?>:</label></th>
+                            <td>
+                                <select id="admin-transfer-type" class="regular-text">
+                                    <option value="add"><?php _e('➕ Add Funds (Credit)', 'thaiprompt-mlm'); ?></option>
+                                    <option value="deduct"><?php _e('➖ Deduct Funds (Debit)', 'thaiprompt-mlm'); ?></option>
+                                    <option value="transfer"><?php _e('💸 Transfer Between Users', 'thaiprompt-mlm'); ?></option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                    <p class="submit">
+                        <button type="submit" class="button button-primary button-large">
+                            ✅ <?php _e('Execute Transaction', 'thaiprompt-mlm'); ?>
+                        </button>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <?php elseif ($current_tab === 'scheduled'): ?>
+    <!-- Scheduled Transfers Tab -->
+    <div style="margin-top: 20px;">
+        <div class="postbox">
+            <div class="postbox-header">
+                <h2>⏰ <?php _e('Schedule New Transfer', 'thaiprompt-mlm'); ?></h2>
+            </div>
+            <div class="inside" style="padding: 20px;">
+                <form id="mlm-schedule-transfer-form">
+                    <table class="form-table">
+                        <tr>
+                            <th><label><?php _e('From User', 'thaiprompt-mlm'); ?>:</label></th>
+                            <td>
+                                <input type="text" id="schedule-from" class="regular-text" placeholder="<?php _e('Username or User ID (empty for system)', 'thaiprompt-mlm'); ?>">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label><?php _e('To User', 'thaiprompt-mlm'); ?>: <span style="color:red;">*</span></label></th>
+                            <td>
+                                <input type="text" id="schedule-to" class="regular-text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label><?php _e('Amount', 'thaiprompt-mlm'); ?>: <span style="color:red;">*</span></label></th>
+                            <td>
+                                <input type="number" id="schedule-amount" step="0.01" min="0.01" class="regular-text" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label><?php _e('Schedule Date & Time', 'thaiprompt-mlm'); ?>: <span style="color:red;">*</span></label></th>
+                            <td>
+                                <input type="datetime-local" id="schedule-datetime" class="regular-text" required>
+                                <p class="description"><?php _e('Transfer will be executed automatically at this time', 'thaiprompt-mlm'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label><?php _e('Repeat', 'thaiprompt-mlm'); ?>:</label></th>
+                            <td>
+                                <select id="schedule-repeat" class="regular-text">
+                                    <option value="once"><?php _e('Once Only', 'thaiprompt-mlm'); ?></option>
+                                    <option value="daily"><?php _e('Daily', 'thaiprompt-mlm'); ?></option>
+                                    <option value="weekly"><?php _e('Weekly', 'thaiprompt-mlm'); ?></option>
+                                    <option value="monthly"><?php _e('Monthly', 'thaiprompt-mlm'); ?></option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><label><?php _e('Note', 'thaiprompt-mlm'); ?>:</label></th>
+                            <td>
+                                <textarea id="schedule-note" class="large-text" rows="3"></textarea>
+                            </td>
+                        </tr>
+                    </table>
+                    <p class="submit">
+                        <button type="submit" class="button button-primary button-large">
+                            ⏰ <?php _e('Schedule Transfer', 'thaiprompt-mlm'); ?>
+                        </button>
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Scheduled Transfers List -->
+        <div class="postbox" style="margin-top: 20px;">
+            <div class="postbox-header">
+                <h2>📋 <?php _e('Scheduled Transfers', 'thaiprompt-mlm'); ?></h2>
+            </div>
+            <div class="inside" style="padding: 20px;">
+                <div id="mlm-scheduled-transfers-list">
+                    <p style="text-align: center; color: #666;">
+                        <em><?php _e('Loading scheduled transfers...', 'thaiprompt-mlm'); ?></em>
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
     <?php endif; ?>
@@ -465,5 +631,225 @@ jQuery(document).ready(function($) {
             }
         });
     });
+
+    // === MANAGE WALLETS TAB ===
+    // Search User
+    $('#mlm-search-user-btn').on('click', function() {
+        const query = $('#mlm-search-user').val().trim();
+        if (!query) {
+            alert('<?php _e('Please enter a search term', 'thaiprompt-mlm'); ?>');
+            return;
+        }
+
+        const $btn = $(this);
+        const originalText = $btn.text();
+        $btn.prop('disabled', true).text('<?php _e('Searching...', 'thaiprompt-mlm'); ?>');
+
+        $.post(ajaxurl, {
+            action: 'mlm_admin_search_user',
+            nonce: thaipromptMLM.nonce,
+            query: query
+        }, function(response) {
+            $btn.prop('disabled', false).text(originalText);
+
+            if (response.success && response.data.users) {
+                let html = '<div class="mlm-users-grid" style="display: grid; gap: 15px;">';
+
+                response.data.users.forEach(function(user) {
+                    html += `
+                        <div class="mlm-user-card" style="background: #fff; border: 2px solid #ddd; border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 style="margin: 0 0 5px;">${user.display_name}</h3>
+                                <p style="margin: 0; color: #666; font-size: 13px;">
+                                    <strong>ID:</strong> ${user.ID} |
+                                    <strong>Email:</strong> ${user.user_email}<br>
+                                    <strong>Balance:</strong> <span style="color: #27ae60; font-size: 18px; font-weight: bold;">${user.balance}</span>
+                                </p>
+                            </div>
+                            <div>
+                                <button class="button button-small mlm-set-transfer-user" data-user-id="${user.ID}" data-username="${user.user_login}">
+                                    <?php _e('Use in Transfer', 'thaiprompt-mlm'); ?>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                $('#mlm-user-search-results').html(html);
+            } else {
+                $('#mlm-user-search-results').html('<p style="color: #e74c3c;"><?php _e('No users found', 'thaiprompt-mlm'); ?></p>');
+            }
+        });
+    });
+
+    // Set user in transfer form
+    $(document).on('click', '.mlm-set-transfer-user', function() {
+        const username = $(this).data('username');
+        $('#admin-transfer-to').val(username);
+        $('html, body').animate({
+            scrollTop: $('#mlm-admin-transfer-form').offset().top - 100
+        }, 500);
+    });
+
+    // Admin Transfer Form
+    $('#mlm-admin-transfer-form').on('submit', function(e) {
+        e.preventDefault();
+
+        const type = $('#admin-transfer-type').val();
+        const from = $('#admin-transfer-from').val().trim();
+        const to = $('#admin-transfer-to').val().trim();
+        const amount = parseFloat($('#admin-transfer-amount').val());
+        const note = $('#admin-transfer-note').val().trim();
+
+        if (!to || amount <= 0) {
+            alert('<?php _e('Please fill in all required fields', 'thaiprompt-mlm'); ?>');
+            return;
+        }
+
+        if (type === 'transfer' && !from) {
+            alert('<?php _e('Sender is required for transfers', 'thaiprompt-mlm'); ?>');
+            return;
+        }
+
+        if (!confirm('<?php _e('Are you sure you want to execute this transaction?', 'thaiprompt-mlm'); ?>')) {
+            return;
+        }
+
+        const $submitBtn = $(this).find('button[type="submit"]');
+        $submitBtn.prop('disabled', true).text('<?php _e('Processing...', 'thaiprompt-mlm'); ?>');
+
+        $.post(ajaxurl, {
+            action: 'mlm_admin_wallet_operation',
+            nonce: thaipromptMLM.nonce,
+            type: type,
+            from_user: from,
+            to_user: to,
+            amount: amount,
+            note: note
+        }, function(response) {
+            $submitBtn.prop('disabled', false).text('✅ <?php _e('Execute Transaction', 'thaiprompt-mlm'); ?>');
+
+            if (response.success) {
+                alert('✅ ' + response.data.message);
+                $('#mlm-admin-transfer-form')[0].reset();
+            } else {
+                alert('❌ ' + response.data);
+            }
+        });
+    });
+
+    // === SCHEDULED TRANSFERS TAB ===
+    // Schedule Transfer Form
+    $('#mlm-schedule-transfer-form').on('submit', function(e) {
+        e.preventDefault();
+
+        const from = $('#schedule-from').val().trim();
+        const to = $('#schedule-to').val().trim();
+        const amount = parseFloat($('#schedule-amount').val());
+        const datetime = $('#schedule-datetime').val();
+        const repeat = $('#schedule-repeat').val();
+        const note = $('#schedule-note').val().trim();
+
+        if (!to || amount <= 0 || !datetime) {
+            alert('<?php _e('Please fill in all required fields', 'thaiprompt-mlm'); ?>');
+            return;
+        }
+
+        const $submitBtn = $(this).find('button[type="submit"]');
+        $submitBtn.prop('disabled', true).text('<?php _e('Scheduling...', 'thaiprompt-mlm'); ?>');
+
+        $.post(ajaxurl, {
+            action: 'mlm_schedule_transfer',
+            nonce: thaipromptMLM.nonce,
+            from_user: from,
+            to_user: to,
+            amount: amount,
+            schedule_datetime: datetime,
+            repeat: repeat,
+            note: note
+        }, function(response) {
+            $submitBtn.prop('disabled', false).text('⏰ <?php _e('Schedule Transfer', 'thaiprompt-mlm'); ?>');
+
+            if (response.success) {
+                alert('✅ ' + response.data.message);
+                $('#mlm-schedule-transfer-form')[0].reset();
+                loadScheduledTransfers();
+            } else {
+                alert('❌ ' + response.data);
+            }
+        });
+    });
+
+    // Load Scheduled Transfers
+    function loadScheduledTransfers() {
+        $.post(ajaxurl, {
+            action: 'mlm_get_scheduled_transfers',
+            nonce: thaipromptMLM.nonce
+        }, function(response) {
+            if (response.success && response.data.transfers) {
+                let html = '<table class="wp-list-table widefat fixed striped"><thead><tr>' +
+                    '<th><?php _e('ID', 'thaiprompt-mlm'); ?></th>' +
+                    '<th><?php _e('From', 'thaiprompt-mlm'); ?></th>' +
+                    '<th><?php _e('To', 'thaiprompt-mlm'); ?></th>' +
+                    '<th><?php _e('Amount', 'thaiprompt-mlm'); ?></th>' +
+                    '<th><?php _e('Scheduled Time', 'thaiprompt-mlm'); ?></th>' +
+                    '<th><?php _e('Repeat', 'thaiprompt-mlm'); ?></th>' +
+                    '<th><?php _e('Status', 'thaiprompt-mlm'); ?></th>' +
+                    '<th><?php _e('Actions', 'thaiprompt-mlm'); ?></th>' +
+                    '</tr></thead><tbody>';
+
+                response.data.transfers.forEach(function(transfer) {
+                    html += `
+                        <tr>
+                            <td>${transfer.id}</td>
+                            <td>${transfer.from_user || '<em>System</em>'}</td>
+                            <td><strong>${transfer.to_user}</strong></td>
+                            <td><strong>${transfer.amount}</strong></td>
+                            <td>${transfer.schedule_datetime}</td>
+                            <td>${transfer.repeat_type}</td>
+                            <td><span class="mlm-status-badge ${transfer.status}">${transfer.status}</span></td>
+                            <td>
+                                ${transfer.status === 'pending' ?
+                                    `<button class="button button-small mlm-cancel-scheduled" data-id="${transfer.id}">❌ Cancel</button>` :
+                                    '-'}
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                $('#mlm-scheduled-transfers-list').html(html);
+            } else {
+                $('#mlm-scheduled-transfers-list').html('<p style="text-align: center; color: #666;"><em><?php _e('No scheduled transfers found', 'thaiprompt-mlm'); ?></em></p>');
+            }
+        });
+    }
+
+    // Cancel Scheduled Transfer
+    $(document).on('click', '.mlm-cancel-scheduled', function() {
+        if (!confirm('<?php _e('Are you sure you want to cancel this scheduled transfer?', 'thaiprompt-mlm'); ?>')) {
+            return;
+        }
+
+        const scheduleId = $(this).data('id');
+        $.post(ajaxurl, {
+            action: 'mlm_cancel_scheduled_transfer',
+            nonce: thaipromptMLM.nonce,
+            schedule_id: scheduleId
+        }, function(response) {
+            if (response.success) {
+                alert('✅ ' + response.data.message);
+                loadScheduledTransfers();
+            } else {
+                alert('❌ ' + response.data);
+            }
+        });
+    });
+
+    // Auto-load scheduled transfers on tab load
+    if (window.location.href.indexOf('tab=scheduled') > -1) {
+        loadScheduledTransfers();
+    }
 });
 </script>

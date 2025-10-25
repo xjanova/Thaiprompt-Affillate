@@ -182,6 +182,19 @@ $stats = $wpdb->get_row("
                 </div>
                 <?php endif; ?>
 
+                <!-- Version History -->
+                <?php
+                $version_count = Thaiprompt_MLM_Landing_Page_Version::get_version_count($page->id);
+                if ($version_count > 0):
+                ?>
+                <div style="padding: 10px 15px; background: #e7f3ff; border-bottom: 1px solid #eee;">
+                    <strong style="font-size: 12px;">📝 <?php _e('Version History:', 'thaiprompt-mlm'); ?></strong>
+                    <p style="margin: 5px 0 0; font-size: 12px; color: #666;">
+                        <?php printf(__('%d versions tracked', 'thaiprompt-mlm'), $version_count); ?>
+                    </p>
+                </div>
+                <?php endif; ?>
+
                 <!-- Actions -->
                 <div style="padding: 15px; display: flex; gap: 10px; justify-content: space-between;">
                     <?php if ($page->status === 'pending'): ?>

@@ -31,6 +31,7 @@ class Thaiprompt_MLM {
         $this->set_locale();
         $this->define_admin_hooks();
         $this->define_public_hooks();
+        $this->setup_cron_jobs();
     }
 
     /**
@@ -78,6 +79,8 @@ class Thaiprompt_MLM {
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-commission.php';
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-wallet.php';
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-wallet-topup.php';
+        require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-scheduled-transfer.php';
+        require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-landing-page-version.php';
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-rank.php';
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-referral.php';
         require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-integrations.php';
@@ -157,5 +160,41 @@ class Thaiprompt_MLM {
      */
     public function get_version() {
         return $this->version;
+    }
+
+    /**
+     * Setup cron jobs for scheduled tasks
+     */
+    private function setup_cron_jobs() {
+        // Schedule cron job for scheduled transfers (every 5 minutes)
+        if (!wp_next_scheduled('thaiprompt_mlm_process_scheduled_transfers')) {
+            wp_schedule_event(time(), 'every_5_minutes', 'thaiprompt_mlm_process_scheduled_transfers');
+        }
+
+        // Register custom cron schedule
+        add_filter('cron_schedules', array($this, 'add_cron_schedules'));
+
+        // Hook the cron action
+        add_action('thaiprompt_mlm_process_scheduled_transfers', array($this, 'process_scheduled_transfers'));
+    }
+
+    /**
+     * Add custom cron schedules
+     */
+    public function add_cron_schedules($schedules) {
+        $schedules['every_5_minutes'] = array(
+            'interval' => 300, // 5 minutes in seconds
+            'display' => __('Every 5 Minutes', 'thaiprompt-mlm')
+        );
+        return $schedules;
+    }
+
+    /**
+     * Process scheduled transfers
+     */
+    public function process_scheduled_transfers() {
+        $result = Thaiprompt_MLM_Scheduled_Transfer::process_due_transfers();
+
+        Thaiprompt_MLM_Logger::info('Cron: Processed scheduled transfers', $result);
     }
 }
