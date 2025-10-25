@@ -32,7 +32,10 @@ $wallet_stats = Thaiprompt_MLM_Wallet::get_wallet_stats($user_id);
 $rank = Thaiprompt_MLM_Database::get_user_rank($user_id);
 $rank_progress = Thaiprompt_MLM_Rank::get_rank_progress($user_id);
 $referrals = Thaiprompt_MLM_Network::get_direct_referrals($user_id);
-$referral_link = Thaiprompt_MLM_Network::get_referral_link($user_id);
+$referral_link = Thaiprompt_MLM_Referral::get_referral_link($user_id);
+$referral_code = Thaiprompt_MLM_Referral::get_code($user_id);
+$qr_code_url = Thaiprompt_MLM_Referral::get_qr_code_url($user_id);
+$sponsor_info = Thaiprompt_MLM_Referral::get_sponsor_info($user_id);
 $commissions = Thaiprompt_MLM_Database::get_user_commissions($user_id, array('limit' => 20));
 $commission_stats = Thaiprompt_MLM_Commission::get_commission_summary($user_id);
 $wallet = Thaiprompt_MLM_Wallet::get_balance($user_id);
@@ -64,24 +67,33 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
 
         <!-- Portal Header -->
         <header class="mlm-portal-header">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 20px;">
+            <div class="mlm-header-container">
+                <!-- Hamburger Menu Button (Mobile) -->
+                <button class="mlm-hamburger" id="mlm-hamburger" aria-label="Toggle Menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+
+                <div class="mlm-header-left">
                     <?php if ($portal_logo): ?>
-                        <img src="<?php echo esc_url($portal_logo); ?>" alt="<?php echo esc_attr($header_text); ?>" style="max-height: 60px; width: auto;">
+                        <img src="<?php echo esc_url($portal_logo); ?>" alt="<?php echo esc_attr($header_text); ?>" class="mlm-portal-logo">
                     <?php endif; ?>
-                    <div>
+                    <div class="mlm-header-text">
                         <h1 class="mlm-portal-title"><?php echo $portal_logo ? '' : '✨ '; ?><?php echo esc_html($header_text); ?></h1>
                         <p class="mlm-portal-subtitle">
                             <?php echo esc_html($subtitle_text); ?>
                         </p>
                     </div>
                 </div>
-                <div>
-                    <a href="<?php echo home_url(); ?>" class="mlm-portal-btn" style="background: rgba(255,255,255,0.2);">
-                        ← <?php _e('Back to Site', 'thaiprompt-mlm'); ?>
+                <div class="mlm-header-actions">
+                    <a href="<?php echo home_url(); ?>" class="mlm-portal-btn mlm-btn-secondary">
+                        <span class="mlm-btn-icon">←</span>
+                        <span class="mlm-btn-text"><?php _e('Back', 'thaiprompt-mlm'); ?></span>
                     </a>
-                    <a href="<?php echo wp_logout_url(home_url()); ?>" class="mlm-portal-btn" style="background: rgba(255,255,255,0.2); margin-left: 10px;">
-                        <?php _e('Logout', 'thaiprompt-mlm'); ?>
+                    <a href="<?php echo wp_logout_url(home_url()); ?>" class="mlm-portal-btn mlm-btn-secondary">
+                        <span class="mlm-btn-icon">🚪</span>
+                        <span class="mlm-btn-text"><?php _e('Logout', 'thaiprompt-mlm'); ?></span>
                     </a>
                 </div>
             </div>
@@ -90,8 +102,11 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
         <!-- Portal Layout -->
         <div class="mlm-portal-layout">
 
+            <!-- Mobile Menu Overlay -->
+            <div class="mlm-menu-overlay" id="mlm-menu-overlay"></div>
+
             <!-- Sidebar Navigation -->
-            <aside class="mlm-portal-sidebar">
+            <aside class="mlm-portal-sidebar" id="mlm-portal-sidebar">
                 <ul class="mlm-portal-nav">
                     <li class="mlm-portal-nav-item">
                         <a href="#dashboard" class="mlm-portal-nav-link active" data-tab="dashboard">
@@ -310,14 +325,62 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                         👥 <?php _e('My Network', 'thaiprompt-mlm'); ?>
                     </h2>
 
-                    <!-- Referral Link -->
-                    <div class="mlm-glass-card mlm-referral-box" style="text-align: center; margin-bottom: 30px;">
-                        <h3 style="color: #fff; margin-bottom: 15px;">🔗 <?php _e('Your Referral Link', 'thaiprompt-mlm'); ?></h3>
-                        <div style="display: flex; gap: 10px; max-width: 600px; margin: 20px auto;">
-                            <input type="text" class="mlm-referral-input" value="<?php echo esc_attr($referral_link); ?>" readonly style="flex: 1; padding: 15px; border-radius: 50px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; font-size: 16px;">
-                            <button class="mlm-portal-btn mlm-copy-referral" data-link="<?php echo esc_attr($referral_link); ?>">
-                                📋 <?php _e('Copy', 'thaiprompt-mlm'); ?>
-                            </button>
+                    <!-- Sponsor Info -->
+                    <?php if ($sponsor_info): ?>
+                    <div class="mlm-glass-card" style="margin-bottom: 30px; padding: 25px;">
+                        <h3 style="color: #fff; margin-bottom: 20px;">👤 <?php _e('My Sponsor', 'thaiprompt-mlm'); ?></h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div>
+                                <div style="color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 5px;"><?php _e('Name', 'thaiprompt-mlm'); ?></div>
+                                <div style="color: #fff; font-size: 18px; font-weight: 600;"><?php echo esc_html($sponsor_info['name']); ?></div>
+                            </div>
+                            <div>
+                                <div style="color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 5px;"><?php _e('Referral Code', 'thaiprompt-mlm'); ?></div>
+                                <div style="color: #fff; font-size: 18px; font-weight: 600; font-family: monospace;"><?php echo esc_html($sponsor_info['code']); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Referral Section -->
+                    <div class="mlm-glass-card mlm-referral-box" style="margin-bottom: 30px; padding: 30px;">
+                        <h3 style="color: #fff; margin-bottom: 25px; text-align: center;">🔗 <?php _e('Share Your Referral', 'thaiprompt-mlm'); ?></h3>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                            <!-- Referral Code -->
+                            <div style="text-align: center;">
+                                <div style="color: rgba(255,255,255,0.8); font-size: 14px; margin-bottom: 10px;"><?php _e('Your Referral Code', 'thaiprompt-mlm'); ?></div>
+                                <div style="background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 15px; padding: 20px; margin-bottom: 15px;">
+                                    <div style="color: #fff; font-size: 32px; font-weight: 800; font-family: monospace; letter-spacing: 3px;">
+                                        <?php echo esc_html($referral_code); ?>
+                                    </div>
+                                </div>
+                                <button class="mlm-portal-btn mlm-copy-code" data-code="<?php echo esc_attr($referral_code); ?>" style="width: 100%;">
+                                    📋 <?php _e('Copy Code', 'thaiprompt-mlm'); ?>
+                                </button>
+                            </div>
+
+                            <!-- QR Code -->
+                            <div style="text-align: center;">
+                                <div style="color: rgba(255,255,255,0.8); font-size: 14px; margin-bottom: 10px;"><?php _e('QR Code', 'thaiprompt-mlm'); ?></div>
+                                <div style="background: #fff; border-radius: 15px; padding: 15px; margin-bottom: 15px; display: inline-block;">
+                                    <img src="<?php echo esc_url($qr_code_url); ?>" alt="QR Code" style="max-width: 200px; height: auto; display: block;">
+                                </div>
+                                <button class="mlm-portal-btn mlm-download-qr" data-qr="<?php echo esc_attr($qr_code_url); ?>" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669);">
+                                    ⬇️ <?php _e('Download QR', 'thaiprompt-mlm'); ?>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Referral Link -->
+                        <div style="text-align: center;">
+                            <div style="color: rgba(255,255,255,0.8); font-size: 14px; margin-bottom: 10px;"><?php _e('Your Referral Link', 'thaiprompt-mlm'); ?></div>
+                            <div style="display: flex; gap: 10px; max-width: 700px; margin: 0 auto;">
+                                <input type="text" class="mlm-referral-input" value="<?php echo esc_attr($referral_link); ?>" readonly style="flex: 1; padding: 15px; border-radius: 50px; border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;">
+                                <button class="mlm-portal-btn mlm-copy-referral" data-link="<?php echo esc_attr($referral_link); ?>">
+                                    📋 <?php _e('Copy Link', 'thaiprompt-mlm'); ?>
+                                </button>
+                            </div>
                         </div>
                     </div>
 
