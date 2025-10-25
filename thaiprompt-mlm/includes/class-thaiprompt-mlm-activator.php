@@ -165,6 +165,30 @@ class Thaiprompt_MLM_Activator {
         ) $charset_collate;";
         dbDelta($sql_product_settings);
 
+        // Withdrawals table
+        $table_withdrawals = $wpdb->prefix . 'thaiprompt_mlm_withdrawals';
+        $sql_withdrawals = "CREATE TABLE $table_withdrawals (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) NOT NULL,
+            amount decimal(15,2) NOT NULL,
+            method varchar(50) NOT NULL,
+            bank_name varchar(255) DEFAULT NULL,
+            account_number varchar(255) DEFAULT NULL,
+            account_name varchar(255) DEFAULT NULL,
+            payment_details text,
+            status varchar(20) DEFAULT 'pending',
+            requested_at datetime DEFAULT CURRENT_TIMESTAMP,
+            processed_at datetime DEFAULT NULL,
+            processed_by bigint(20) DEFAULT NULL,
+            admin_note text,
+            rejection_reason text,
+            PRIMARY KEY  (id),
+            KEY user_id (user_id),
+            KEY status (status),
+            KEY requested_at (requested_at)
+        ) $charset_collate;";
+        dbDelta($sql_withdrawals);
+
         // Update database version
         update_option('thaiprompt_mlm_db_version', THAIPROMPT_MLM_DB_VERSION);
     }

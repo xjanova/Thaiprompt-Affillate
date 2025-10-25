@@ -30,7 +30,7 @@ define('THAIPROMPT_MLM_PLUGIN_BASENAME', plugin_basename(__FILE__));
 /**
  * Database version
  */
-define('THAIPROMPT_MLM_DB_VERSION', '1.0.0');
+define('THAIPROMPT_MLM_DB_VERSION', '1.2.0');
 
 /**
  * Activation hook
@@ -39,6 +39,19 @@ function activate_thaiprompt_mlm() {
     require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-activator.php';
     Thaiprompt_MLM_Activator::activate();
 }
+
+/**
+ * Check for database updates
+ */
+function thaiprompt_mlm_check_db_update() {
+    $current_db_version = get_option('thaiprompt_mlm_db_version', '0');
+
+    if (version_compare($current_db_version, THAIPROMPT_MLM_DB_VERSION, '<')) {
+        require_once THAIPROMPT_MLM_PLUGIN_DIR . 'includes/class-thaiprompt-mlm-activator.php';
+        Thaiprompt_MLM_Activator::activate();
+    }
+}
+add_action('plugins_loaded', 'thaiprompt_mlm_check_db_update');
 
 /**
  * Deactivation hook
