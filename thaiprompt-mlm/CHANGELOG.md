@@ -2,6 +2,46 @@
 
 All notable changes to Thaiprompt MLM Plugin will be documented in this file.
 
+## [1.2.0] - 2024-01-20
+
+### Added
+- ✨ **MLM Portal Page** - Comprehensive portal with modern glassmorphism design
+  - Custom full-page template (mlm-portal-template.php)
+  - Purple/pink gradient theme with sparkle effects
+  - Six integrated tabs: Dashboard, Genealogy, Network, Wallet, Commissions, Rank Progress
+  - Real-time data updates via AJAX
+  - Particle animations and smooth transitions
+  - Fully responsive for all devices
+- ✨ **Portal CSS** - thaiprompt-mlm-portal.css
+  - Glassmorphism effects with backdrop-filter
+  - Animated gradient backgrounds
+  - Custom scrollbar styling
+  - Progress bars and badges
+  - Mobile-optimized responsive design
+- ✨ **Portal JavaScript** - thaiprompt-mlm-portal.js
+  - SPA-like tab navigation
+  - Animated statistics counters
+  - Floating particle effects
+  - Auto-refresh functionality
+  - Copy and share features
+- ✨ **WooCommerce Integration** - Portal link in My Account menu
+- ✨ **Auto-creation** - Portal page created automatically on activation
+- ✨ **Template System** - Custom WordPress page template registration
+
+### Improved
+- 🔧 **User Experience** - Unified portal interface for all MLM functions
+- 🔧 **Design Language** - Modern purple theme with international standards
+- 🔧 **Performance** - Optimized asset loading for portal pages only
+- 🔧 **Navigation** - Seamless access from WordPress account page
+- 🔧 **Independence** - Complete separation from WordPress theme styling
+
+### Technical
+- Custom page template system integration
+- Conditional asset enqueuing for portal pages
+- WordPress rewrite endpoint registration
+- Template include filter implementation
+- Page meta template assignment on creation
+
 ## [1.1.0] - 2024-01-15
 
 ### Added
@@ -69,6 +109,9 @@ All notable changes to Thaiprompt MLM Plugin will be documented in this file.
 
 ## Version History
 
+### [1.2.0] - MLM Portal with Modern Design
+Major feature release adding a comprehensive, standalone MLM Portal with modern glassmorphism design, purple theme, and complete functionality in a unified interface.
+
 ### [1.1.0] - Admin Improvements & Bug Fixes
 Major update focusing on making the admin interface fully functional with proper data display and management capabilities.
 
@@ -78,6 +121,14 @@ First public release with complete MLM functionality including network managemen
 ---
 
 ## Upgrade Notes
+
+### Upgrading to 1.2.0
+- New MLM Portal page will be created automatically
+- Portal accessible from WooCommerce My Account menu
+- No database migration required
+- All existing settings and data preserved
+- Portal template registered automatically
+- Flush permalinks may be required (Settings > Permalinks > Save)
 
 ### Upgrading to 1.1.0
 - All admin pages now display actual data
