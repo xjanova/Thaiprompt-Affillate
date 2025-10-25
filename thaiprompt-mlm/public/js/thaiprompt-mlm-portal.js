@@ -133,18 +133,131 @@
         }
 
         loadGenealogyTree() {
-            const $container = $('.mlm-genealogy-container');
+            // Load genealogy tree on tab switch
+            this.loadGenealogyData();
+        }
 
-            if ($container.length && !$container.data('loaded')) {
-                // Initialize genealogy tree if not already done
-                if (typeof $container.mlmGenealogyTree === 'function') {
-                    $container.mlmGenealogyTree({
-                        userId: thaipromptMLM.user_id,
-                        maxDepth: 5
-                    });
-                    $container.data('loaded', true);
+        loadGenealogyData(userId = null, maxDepth = null) {
+            const self = this;
+            const $container = $('#mlm-genealogy-container');
+            const $loading = $('#mlm-genealogy-loading');
+
+            // Get values from selects or use defaults
+            userId = userId || $('#mlm-genealogy-user').val() || thaipromptMLM.user_id;
+            maxDepth = maxDepth || $('#mlm-genealogy-depth').val() || 5;
+
+            // Show loading
+            $loading.show();
+            $container.html('');
+
+            $.ajax({
+                url: thaipromptMLM.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'thaiprompt_mlm_get_genealogy_public',
+                    nonce: thaipromptMLM.nonce,
+                    user_id: userId,
+                    max_depth: maxDepth
+                },
+                success: function(response) {
+                    $loading.hide();
+
+                    if (response.success && response.data) {
+                        self.renderGenealogyTree(response.data, $container);
+                    } else {
+                        $container.html(
+                            '<div style="text-align: center; padding: 60px;">' +
+                            '<div style="font-size: 48px; margin-bottom: 20px;">😔</div>' +
+                            '<p style="color: rgba(255,255,255,0.7);">' +
+                            (response.data && response.data.message ? response.data.message : 'No genealogy data found') +
+                            '</p>' +
+                            '</div>'
+                        );
+                    }
+                },
+                error: function() {
+                    $loading.hide();
+                    $container.html(
+                        '<div style="text-align: center; padding: 60px;">' +
+                        '<div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>' +
+                        '<p style="color: rgba(255,255,255,0.7);">Error loading genealogy tree</p>' +
+                        '</div>'
+                    );
                 }
+            });
+        }
+
+        renderGenealogyTree(node, $container) {
+            const $tree = $('<div class="mlm-tree"></div>');
+            const $root = this.createTreeNode(node, 0);
+            $tree.append($root);
+            $container.html($tree);
+
+            // Animate tree nodes
+            $('.mlm-tree-node').each(function(index) {
+                const $node = $(this);
+                $node.css({
+                    'opacity': '0',
+                    'transform': 'scale(0.8)'
+                });
+
+                setTimeout(() => {
+                    $node.css({
+                        'opacity': '1',
+                        'transform': 'scale(1)',
+                        'transition': 'all 0.3s ease'
+                    });
+                }, index * 50);
+            });
+        }
+
+        createTreeNode(node, level) {
+            const hasChildren = node.children && node.children.length > 0;
+            const isRoot = level === 0;
+
+            const $nodeWrapper = $('<div class="mlm-tree-level"></div>');
+
+            // Create node card
+            const $node = $(`
+                <div class="mlm-tree-node ${isRoot ? 'mlm-tree-root' : ''}" data-user-id="${node.user_id}">
+                    <div class="mlm-tree-node-card">
+                        <div class="mlm-tree-node-header">
+                            <div class="mlm-tree-node-name">${node.name}</div>
+                            <div class="mlm-tree-node-level">L${node.level}</div>
+                        </div>
+                        <div class="mlm-tree-node-body">
+                            <div class="mlm-tree-node-stat">
+                                <span class="mlm-tree-stat-label">Personal:</span>
+                                <span class="mlm-tree-stat-value">${formatCurrency(node.personal_sales)}</span>
+                            </div>
+                            <div class="mlm-tree-node-stat">
+                                <span class="mlm-tree-stat-label">Group:</span>
+                                <span class="mlm-tree-stat-value">${formatCurrency(node.group_sales)}</span>
+                            </div>
+                        </div>
+                        <div class="mlm-tree-node-footer">
+                            <span class="mlm-tree-node-count">👈 ${node.left_count || 0}</span>
+                            <span class="mlm-tree-node-count">👉 ${node.right_count || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `);
+
+            $nodeWrapper.append($node);
+
+            // Add children if any
+            if (hasChildren) {
+                const $children = $('<div class="mlm-tree-children"></div>');
+
+                node.children.forEach((child) => {
+                    const $childNode = this.createTreeNode(child, level + 1);
+                    $children.append($childNode);
+                });
+
+                $nodeWrapper.append($children);
             }
+
+            return $nodeWrapper;
         }
 
         loadNetworkData() {
@@ -228,6 +341,18 @@
         }
 
         setupEventHandlers() {
+            const self = this;
+
+            // Genealogy refresh button
+            $(document).on('click', '#mlm-genealogy-refresh', function() {
+                self.loadGenealogyData();
+            });
+
+            // Genealogy user/depth change
+            $(document).on('change', '#mlm-genealogy-user, #mlm-genealogy-depth', function() {
+                self.loadGenealogyData();
+            });
+
             // Copy referral link
             $(document).on('click', '.mlm-copy-referral', function() {
                 const link = $(this).data('link') || $(this).closest('.mlm-referral-box').find('input').val();
