@@ -689,6 +689,48 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                             <?php endif; ?>
                         </div>
 
+                        <!-- Share Section (only for approved pages) -->
+                        <?php if ($landing_page->status === 'approved' && $landing_page->is_active): ?>
+                        <div class="mlm-glass-card" style="margin-bottom: 30px; padding: 25px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));">
+                            <h3 style="color: #fff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                                🔗 <?php _e('Share Your Landing Page', 'thaiprompt-mlm'); ?>
+                            </h3>
+
+                            <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                                <label style="color: rgba(255,255,255,0.8); display: block; margin-bottom: 10px; font-size: 14px;">
+                                    <?php _e('Your Landing Page URL:', 'thaiprompt-mlm'); ?>
+                                </label>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <input type="text" readonly value="<?php echo esc_attr($landing_url); ?>" id="mlm-landing-url-input"
+                                        style="flex: 1; min-width: 250px; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2); border-radius: 12px; color: #fff; font-size: 14px; font-family: monospace;">
+                                    <button type="button" class="mlm-portal-btn mlm-copy-landing-url" data-url="<?php echo esc_attr($landing_url); ?>"
+                                        style="background: linear-gradient(135deg, #10b981, #059669); white-space: nowrap;">
+                                        📋 <?php _e('Copy URL', 'thaiprompt-mlm'); ?>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                                <button type="button" class="mlm-share-landing" data-platform="facebook" data-url="<?php echo esc_attr($landing_url); ?>"
+                                    style="padding: 12px 16px; background: #1877f2; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                    📘 Facebook
+                                </button>
+                                <button type="button" class="mlm-share-landing" data-platform="twitter" data-url="<?php echo esc_attr($landing_url); ?>"
+                                    style="padding: 12px 16px; background: #1da1f2; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                    🐦 Twitter
+                                </button>
+                                <button type="button" class="mlm-share-landing" data-platform="line" data-url="<?php echo esc_attr($landing_url); ?>"
+                                    style="padding: 12px 16px; background: #00B900; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                    💬 LINE
+                                </button>
+                                <button type="button" class="mlm-share-landing" data-platform="whatsapp" data-url="<?php echo esc_attr($landing_url); ?>"
+                                    style="padding: 12px 16px; background: #25D366; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                    📱 WhatsApp
+                                </button>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- Preview Card -->
                         <div class="mlm-glass-card" style="margin-bottom: 30px;">
                             <h3 style="color: #fff; margin-bottom: 20px;">📱 <?php _e('Preview', 'thaiprompt-mlm'); ?></h3>

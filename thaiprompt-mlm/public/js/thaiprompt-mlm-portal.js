@@ -617,6 +617,53 @@
                     reader.readAsDataURL(file);
                 }
             });
+
+            // Copy Landing Page URL
+            $(document).on('click', '.mlm-copy-landing-url', function() {
+                const url = $(this).data('url');
+                const $input = $('#mlm-landing-url-input');
+
+                // Select and copy
+                $input.select();
+                document.execCommand('copy');
+
+                // Show feedback
+                const $button = $(this);
+                const originalText = $button.html();
+                $button.html('✓ Copied!').css('background', 'linear-gradient(135deg, #10b981, #059669)');
+
+                setTimeout(() => {
+                    $button.html(originalText);
+                }, 2000);
+            });
+
+            // Share Landing Page
+            $(document).on('click', '.mlm-share-landing', function() {
+                const platform = $(this).data('platform');
+                const url = $(this).data('url');
+                const text = 'Check out my landing page!';
+
+                let shareUrl = '';
+
+                switch (platform) {
+                    case 'facebook':
+                        shareUrl = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+                        break;
+                    case 'twitter':
+                        shareUrl = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
+                        break;
+                    case 'line':
+                        shareUrl = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(url);
+                        break;
+                    case 'whatsapp':
+                        shareUrl = 'https://wa.me/?text=' + encodeURIComponent(text + ' ' + url);
+                        break;
+                }
+
+                if (shareUrl) {
+                    window.open(shareUrl, '_blank', 'width=600,height=400');
+                }
+            });
         }
 
         startBackgroundAnimations() {
