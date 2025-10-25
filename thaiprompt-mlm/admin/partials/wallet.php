@@ -145,16 +145,29 @@ $stats = $wpdb->get_row("
                         </td>
                         <td>
                             <?php if ($withdrawal->status === 'pending'): ?>
-                                <button class="button button-small mlm-action-btn approve mlm-approve-withdrawal" data-withdrawal-id="<?php echo $withdrawal->id; ?>">
-                                    <?php _e('Approve', 'thaiprompt-mlm'); ?>
+                                <button class="button button-primary button-small mlm-approve-withdrawal"
+                                    data-withdrawal-id="<?php echo $withdrawal->id; ?>"
+                                    data-user-id="<?php echo $withdrawal->user_id; ?>"
+                                    data-amount="<?php echo $withdrawal->amount; ?>"
+                                    data-user-name="<?php echo esc_attr($user ? $user->display_name : ''); ?>">
+                                    <?php _e('Approve & Send', 'thaiprompt-mlm'); ?>
                                 </button>
-                                <button class="button button-small mlm-action-btn reject mlm-reject-withdrawal" data-withdrawal-id="<?php echo $withdrawal->id; ?>">
+                                <button class="button button-small mlm-reject-withdrawal"
+                                    data-withdrawal-id="<?php echo $withdrawal->id; ?>"
+                                    data-user-name="<?php echo esc_attr($user ? $user->display_name : ''); ?>">
                                     <?php _e('Reject', 'thaiprompt-mlm'); ?>
                                 </button>
-                            <?php elseif ($withdrawal->notes): ?>
-                                <button class="button button-small" onclick="alert('<?php echo esc_js($withdrawal->notes); ?>')">
-                                    <?php _e('View Notes', 'thaiprompt-mlm'); ?>
-                                </button>
+                            <?php else: ?>
+                                <?php if ($withdrawal->slip_attachment_id): ?>
+                                    <button class="button button-small" onclick="window.open('<?php echo wp_get_attachment_url($withdrawal->slip_attachment_id); ?>', '_blank')">
+                                        <?php _e('View Slip', 'thaiprompt-mlm'); ?>
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($withdrawal->notes): ?>
+                                    <button class="button button-small" onclick="alert('<?php echo esc_js($withdrawal->notes); ?>')">
+                                        <?php _e('View Notes', 'thaiprompt-mlm'); ?>
+                                    </button>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -194,3 +207,263 @@ $stats = $wpdb->get_row("
     </div>
     <?php endif; ?>
 </div>
+
+<!-- Approve Withdrawal Modal -->
+<div id="mlm-approve-modal" class="mlm-modal" style="display: none;">
+    <div class="mlm-modal-content" style="max-width: 600px;">
+        <span class="mlm-modal-close">&times;</span>
+        <h2><?php _e('Approve Withdrawal & Send via LINE', 'thaiprompt-mlm'); ?></h2>
+
+        <form id="mlm-approve-form" enctype="multipart/form-data">
+            <input type="hidden" id="approve-withdrawal-id" name="withdrawal_id">
+
+            <div class="mlm-form-group">
+                <label><?php _e('User', 'thaiprompt-mlm'); ?>:</label>
+                <p id="approve-user-name" style="font-weight: bold;"></p>
+            </div>
+
+            <div class="mlm-form-group">
+                <label><?php _e('Amount', 'thaiprompt-mlm'); ?>:</label>
+                <p id="approve-amount" style="font-weight: bold; font-size: 18px; color: #2ecc71;"></p>
+            </div>
+
+            <div class="mlm-form-group">
+                <label for="slip-upload">
+                    <?php _e('Upload Transfer Slip', 'thaiprompt-mlm'); ?>
+                    <span style="color: #e74c3c;">*</span>
+                </label>
+                <input type="file" id="slip-upload" name="slip" accept="image/*" required>
+                <p class="description"><?php _e('Required: Upload the transfer slip to send to member via LINE', 'thaiprompt-mlm'); ?></p>
+
+                <div id="slip-preview" style="margin-top: 10px; display: none;">
+                    <img id="slip-preview-img" src="" style="max-width: 100%; max-height: 300px; border: 2px solid #ddd; border-radius: 4px;">
+                </div>
+            </div>
+
+            <div class="mlm-form-group">
+                <label for="approve-notes"><?php _e('Notes (Optional)', 'thaiprompt-mlm'); ?>:</label>
+                <textarea id="approve-notes" name="notes" rows="3" class="widefat" placeholder="<?php _e('Add any notes for the member...', 'thaiprompt-mlm'); ?>"></textarea>
+            </div>
+
+            <div class="mlm-modal-actions">
+                <button type="submit" class="button button-primary">
+                    <?php _e('✅ Approve & Send via LINE', 'thaiprompt-mlm'); ?>
+                </button>
+                <button type="button" class="button mlm-modal-cancel">
+                    <?php _e('Cancel', 'thaiprompt-mlm'); ?>
+                </button>
+            </div>
+        </form>
+
+        <div id="approve-loading" style="display: none; text-align: center; padding: 20px;">
+            <div class="spinner is-active" style="float: none; margin: 0 auto;"></div>
+            <p><?php _e('Processing and sending notification via LINE...', 'thaiprompt-mlm'); ?></p>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Withdrawal Modal -->
+<div id="mlm-reject-modal" class="mlm-modal" style="display: none;">
+    <div class="mlm-modal-content" style="max-width: 500px;">
+        <span class="mlm-modal-close">&times;</span>
+        <h2><?php _e('Reject Withdrawal', 'thaiprompt-mlm'); ?></h2>
+
+        <form id="mlm-reject-form">
+            <input type="hidden" id="reject-withdrawal-id" name="withdrawal_id">
+
+            <div class="mlm-form-group">
+                <label><?php _e('User', 'thaiprompt-mlm'); ?>:</label>
+                <p id="reject-user-name" style="font-weight: bold;"></p>
+            </div>
+
+            <div class="mlm-form-group">
+                <label for="reject-reason">
+                    <?php _e('Reason for Rejection', 'thaiprompt-mlm'); ?>
+                    <span style="color: #e74c3c;">*</span>
+                </label>
+                <textarea id="reject-reason" name="reason" rows="4" class="widefat" required placeholder="<?php _e('Please provide a reason for rejection...', 'thaiprompt-mlm'); ?>"></textarea>
+            </div>
+
+            <div class="mlm-modal-actions">
+                <button type="submit" class="button button-primary">
+                    <?php _e('Reject Withdrawal', 'thaiprompt-mlm'); ?>
+                </button>
+                <button type="button" class="button mlm-modal-cancel">
+                    <?php _e('Cancel', 'thaiprompt-mlm'); ?>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.mlm-modal {
+    display: none;
+    position: fixed;
+    z-index: 999999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
+}
+
+.mlm-modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 30px;
+    border: 1px solid #888;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+.mlm-modal-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.mlm-modal-close:hover,
+.mlm-modal-close:focus {
+    color: #000;
+}
+
+.mlm-form-group {
+    margin-bottom: 20px;
+}
+
+.mlm-form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.mlm-modal-actions {
+    margin-top: 25px;
+    text-align: right;
+    border-top: 1px solid #ddd;
+    padding-top: 20px;
+}
+
+.mlm-modal-actions button {
+    margin-left: 10px;
+}
+</style>
+
+<script>
+jQuery(document).ready(function($) {
+    // Approve Modal
+    $('.mlm-approve-withdrawal').on('click', function() {
+        var withdrawalId = $(this).data('withdrawal-id');
+        var userName = $(this).data('user-name');
+        var amount = $(this).data('amount');
+
+        $('#approve-withdrawal-id').val(withdrawalId);
+        $('#approve-user-name').text(userName);
+        $('#approve-amount').text('฿' + parseFloat(amount).toLocaleString('th-TH', {minimumFractionDigits: 2}));
+        $('#slip-preview').hide();
+        $('#mlm-approve-form')[0].reset();
+        $('#mlm-approve-modal').fadeIn();
+    });
+
+    // Reject Modal
+    $('.mlm-reject-withdrawal').on('click', function() {
+        var withdrawalId = $(this).data('withdrawal-id');
+        var userName = $(this).data('user-name');
+
+        $('#reject-withdrawal-id').val(withdrawalId);
+        $('#reject-user-name').text(userName);
+        $('#mlm-reject-form')[0].reset();
+        $('#mlm-reject-modal').fadeIn();
+    });
+
+    // Close modals
+    $('.mlm-modal-close, .mlm-modal-cancel').on('click', function() {
+        $(this).closest('.mlm-modal').fadeOut();
+    });
+
+    // Close on outside click
+    $(window).on('click', function(e) {
+        if ($(e.target).hasClass('mlm-modal')) {
+            $('.mlm-modal').fadeOut();
+        }
+    });
+
+    // Slip preview
+    $('#slip-upload').on('change', function(e) {
+        var file = e.target.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('#slip-preview-img').attr('src', e.target.result);
+                $('#slip-preview').show();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Approve Form Submit
+    $('#mlm-approve-form').on('submit', function(e) {
+        e.preventDefault();
+
+        var formData = new FormData(this);
+        formData.append('action', 'mlm_approve_withdrawal');
+        formData.append('nonce', '<?php echo wp_create_nonce('mlm_withdrawal_action'); ?>');
+
+        $('#mlm-approve-form').hide();
+        $('#approve-loading').show();
+
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    alert('✅ ' + response.data.message);
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + response.data);
+                    $('#mlm-approve-form').show();
+                    $('#approve-loading').hide();
+                }
+            },
+            error: function() {
+                alert('❌ An error occurred. Please try again.');
+                $('#mlm-approve-form').show();
+                $('#approve-loading').hide();
+            }
+        });
+    });
+
+    // Reject Form Submit
+    $('#mlm-reject-form').on('submit', function(e) {
+        e.preventDefault();
+
+        if (!confirm('<?php _e('Are you sure you want to reject this withdrawal?', 'thaiprompt-mlm'); ?>')) {
+            return;
+        }
+
+        var data = {
+            action: 'mlm_reject_withdrawal',
+            nonce: '<?php echo wp_create_nonce('mlm_withdrawal_action'); ?>',
+            withdrawal_id: $('#reject-withdrawal-id').val(),
+            reason: $('#reject-reason').val()
+        };
+
+        $.post(ajaxurl, data, function(response) {
+            if (response.success) {
+                alert('✅ ' + response.data.message);
+                location.reload();
+            } else {
+                alert('❌ Error: ' + response.data);
+            }
+        });
+    });
+});
+</script>

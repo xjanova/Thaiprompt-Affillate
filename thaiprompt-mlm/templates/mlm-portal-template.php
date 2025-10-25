@@ -512,6 +512,71 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                     </div>
                     <?php endif; ?>
 
+                    <!-- Transfer Funds -->
+                    <div class="mlm-glass-card" style="margin-bottom: 30px;">
+                        <h3 style="color: #fff; margin-bottom: 20px;">💸 <?php _e('Transfer Funds', 'thaiprompt-mlm'); ?></h3>
+                        <p style="color: rgba(255,255,255,0.7); margin-bottom: 25px;">
+                            <?php _e('โอนเงินให้สมาชิกคนอื่นในระบบ (สามารถใช้ชื่อผู้ใช้, อีเมล หรือ รหัสแนะนำ)', 'thaiprompt-mlm'); ?>
+                        </p>
+
+                        <form id="mlm-transfer-form" style="max-width: 500px;">
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; color: #fff; margin-bottom: 8px; font-weight: 600;">
+                                    <?php _e('Recipient', 'thaiprompt-mlm'); ?>
+                                    <span style="color: #ef4444;">*</span>
+                                </label>
+                                <input type="text"
+                                    id="transfer-recipient"
+                                    name="recipient"
+                                    class="mlm-input"
+                                    placeholder="<?php _e('Username, Email, or Referral Code', 'thaiprompt-mlm'); ?>"
+                                    required
+                                    style="width: 100%; padding: 12px 15px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 15px;">
+                            </div>
+
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; color: #fff; margin-bottom: 8px; font-weight: 600;">
+                                    <?php _e('Amount', 'thaiprompt-mlm'); ?>
+                                    <span style="color: #ef4444;">*</span>
+                                </label>
+                                <input type="number"
+                                    id="transfer-amount"
+                                    name="amount"
+                                    class="mlm-input"
+                                    placeholder="0.00"
+                                    min="1"
+                                    step="0.01"
+                                    required
+                                    style="width: 100%; padding: 12px 15px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 15px;">
+                                <small style="color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 5px; display: block;">
+                                    <?php _e('Transfer fee will be calculated and shown before confirmation', 'thaiprompt-mlm'); ?>
+                                </small>
+                            </div>
+
+                            <div style="margin-bottom: 25px;">
+                                <label style="display: block; color: #fff; margin-bottom: 8px; font-weight: 600;">
+                                    <?php _e('Note (Optional)', 'thaiprompt-mlm'); ?>
+                                </label>
+                                <input type="text"
+                                    id="transfer-note"
+                                    name="note"
+                                    class="mlm-input"
+                                    placeholder="<?php _e('Add a note...', 'thaiprompt-mlm'); ?>"
+                                    style="width: 100%; padding: 12px 15px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-size: 15px;">
+                            </div>
+
+                            <button type="submit" class="mlm-portal-btn" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED); width: 100%;">
+                                💸 <?php _e('Transfer', 'thaiprompt-mlm'); ?>
+                            </button>
+                        </form>
+
+                        <div style="margin-top: 20px; padding: 15px; background: rgba(139, 92, 246, 0.1); border-left: 4px solid #8B5CF6; border-radius: 8px;">
+                            <p style="color: rgba(255,255,255,0.8); margin: 0; font-size: 14px;">
+                                💡 <?php _e('ค่าธรรมเนียมการโอนจะถูกหักจากยอดที่โอน (อัตราค่าบริการขึ้นอยู่กับการตั้งค่าของผู้ดูแลระบบ)', 'thaiprompt-mlm'); ?>
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Recent Transactions -->
                     <div class="mlm-glass-card">
                         <h3 style="color: #fff; margin-bottom: 20px;">📜 <?php _e('Recent Transactions', 'thaiprompt-mlm'); ?></h3>
@@ -982,6 +1047,113 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                 }
             });
         });
+
+        // Transfer Form Handler
+        const transferForm = document.getElementById('mlm-transfer-form');
+        if (transferForm) {
+            transferForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const recipient = document.getElementById('transfer-recipient').value.trim();
+                const amount = parseFloat(document.getElementById('transfer-amount').value);
+                const note = document.getElementById('transfer-note').value.trim();
+
+                if (!recipient || !amount || amount <= 0) {
+                    alert('<?php _e('Please fill in all required fields', 'thaiprompt-mlm'); ?>');
+                    return;
+                }
+
+                if (!confirm('<?php _e('Are you sure you want to transfer', 'thaiprompt-mlm'); ?> ฿' + amount.toFixed(2) + ' <?php _e('to', 'thaiprompt-mlm'); ?> ' + recipient + '?')) {
+                    return;
+                }
+
+                const submitBtn = transferForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ <?php _e('Processing...', 'thaiprompt-mlm'); ?>';
+
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'mlm_transfer_funds',
+                        nonce: '<?php echo wp_create_nonce('mlm_wallet_action'); ?>',
+                        recipient: recipient,
+                        amount: amount,
+                        note: note
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.data.message);
+                        location.reload();
+                    } else {
+                        alert('❌ ' + data.data);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    alert('❌ <?php _e('An error occurred. Please try again.', 'thaiprompt-mlm'); ?>');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            });
+        }
+
+        // Withdraw Button Handler
+        const withdrawBtn = document.querySelector('.mlm-withdraw-btn');
+        if (withdrawBtn) {
+            withdrawBtn.addEventListener('click', function() {
+                const amount = prompt('<?php _e('Enter amount to withdraw:', 'thaiprompt-mlm'); ?>');
+
+                if (!amount) return;
+
+                const amountNum = parseFloat(amount);
+                if (isNaN(amountNum) || amountNum <= 0) {
+                    alert('<?php _e('Invalid amount', 'thaiprompt-mlm'); ?>');
+                    return;
+                }
+
+                if (!confirm('<?php _e('Withdraw', 'thaiprompt-mlm'); ?> ฿' + amountNum.toFixed(2) + '?\n\n<?php _e('Note: Requires LINE verification. Admin will process manually.', 'thaiprompt-mlm'); ?>')) {
+                    return;
+                }
+
+                withdrawBtn.disabled = true;
+                withdrawBtn.innerHTML = '⏳ <?php _e('Processing...', 'thaiprompt-mlm'); ?>';
+
+                fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: 'mlm_request_withdrawal',
+                        nonce: '<?php echo wp_create_nonce('mlm_wallet_action'); ?>',
+                        amount: amountNum
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ ' + data.data.message);
+                        location.reload();
+                    } else {
+                        alert('❌ ' + data.data);
+                        withdrawBtn.disabled = false;
+                        withdrawBtn.innerHTML = '<?php _e('Withdraw Funds', 'thaiprompt-mlm'); ?>';
+                    }
+                })
+                .catch(error => {
+                    alert('❌ <?php _e('An error occurred. Please try again.', 'thaiprompt-mlm'); ?>');
+                    withdrawBtn.disabled = false;
+                    withdrawBtn.innerHTML = '<?php _e('Withdraw Funds', 'thaiprompt-mlm'); ?>';
+                });
+            });
+        }
     }
 })();
 </script>
