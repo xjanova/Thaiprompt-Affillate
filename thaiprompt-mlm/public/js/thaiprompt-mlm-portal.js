@@ -13,11 +13,54 @@
         }
 
         init() {
+            this.setupMobileMenu();
             this.setupTabNavigation();
             this.setupAnimations();
             this.loadDashboardData();
             this.setupEventHandlers();
             this.startBackgroundAnimations();
+        }
+
+        setupMobileMenu() {
+            const $hamburger = $('#mlm-hamburger');
+            const $sidebar = $('#mlm-portal-sidebar');
+            const $overlay = $('#mlm-menu-overlay');
+
+            // Toggle mobile menu
+            $hamburger.on('click', function() {
+                $hamburger.toggleClass('active');
+                $sidebar.toggleClass('active');
+                $overlay.toggleClass('active');
+                $('body').toggleClass('menu-open');
+            });
+
+            // Close menu when clicking overlay
+            $overlay.on('click', function() {
+                $hamburger.removeClass('active');
+                $sidebar.removeClass('active');
+                $overlay.removeClass('active');
+                $('body').removeClass('menu-open');
+            });
+
+            // Close menu when clicking nav link (mobile)
+            $('.mlm-portal-nav-link').on('click', function() {
+                if ($(window).width() <= 768) {
+                    $hamburger.removeClass('active');
+                    $sidebar.removeClass('active');
+                    $overlay.removeClass('active');
+                    $('body').removeClass('menu-open');
+                }
+            });
+
+            // Handle window resize
+            $(window).on('resize', function() {
+                if ($(window).width() > 768) {
+                    $hamburger.removeClass('active');
+                    $sidebar.removeClass('active');
+                    $overlay.removeClass('active');
+                    $('body').removeClass('menu-open');
+                }
+            });
         }
 
         setupTabNavigation() {
@@ -365,11 +408,54 @@
 
                 // Show feedback
                 const $button = $(this);
-                const originalText = $button.text();
-                $button.text('✓ Copied!').css('background', 'linear-gradient(135deg, #10b981, #059669)');
+                const originalText = $button.html();
+                $button.html('✓ Copied!').css('background', 'linear-gradient(135deg, #10b981, #059669)');
 
                 setTimeout(() => {
-                    $button.text(originalText).css('background', '');
+                    $button.html(originalText).css('background', '');
+                }, 2000);
+            });
+
+            // Copy referral code
+            $(document).on('click', '.mlm-copy-code', function() {
+                const code = $(this).data('code');
+
+                const $temp = $('<input>');
+                $('body').append($temp);
+                $temp.val(code).select();
+                document.execCommand('copy');
+                $temp.remove();
+
+                // Show feedback
+                const $button = $(this);
+                const originalText = $button.html();
+                $button.html('✓ Copied!').css('background', 'linear-gradient(135deg, #10b981, #059669)');
+
+                setTimeout(() => {
+                    $button.html(originalText).css('background', '');
+                }, 2000);
+            });
+
+            // Download QR Code
+            $(document).on('click', '.mlm-download-qr', function() {
+                const qrUrl = $(this).data('qr');
+
+                // Create temporary link and trigger download
+                const $link = $('<a>');
+                $link.attr('href', qrUrl);
+                $link.attr('download', 'my-referral-qr-code.png');
+                $link.attr('target', '_blank');
+                $('body').append($link);
+                $link[0].click();
+                $link.remove();
+
+                // Show feedback
+                const $button = $(this);
+                const originalText = $button.html();
+                $button.html('✓ Downloaded!').css('background', 'linear-gradient(135deg, #10b981, #059669)');
+
+                setTimeout(() => {
+                    $button.html(originalText).css('background', 'linear-gradient(135deg, #10b981, #059669)');
                 }, 2000);
             });
 

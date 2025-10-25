@@ -2,6 +2,56 @@
 
 All notable changes to Thaiprompt MLM Plugin will be documented in this file.
 
+## [1.6.0] - 2024-01-24
+
+### ✨ New Features - Mobile First & Referral System
+
+Major responsive redesign with modern 3D UI and advanced referral system.
+
+### Added - Mobile Responsive
+- ✅ **Hamburger Menu** - Slide-in navigation for mobile devices
+- ✅ **Mobile Menu Overlay** - Dark overlay with blur effect
+- ✅ **Responsive Grid** - Adaptive layouts for all screen sizes
+- ✅ **Touch Optimized** - Larger touch targets for mobile
+- ✅ **Safe Area Support** - iPhone notch support
+- ✅ **No Horizontal Scroll** - Prevents overflow on small screens
+
+### Added - Referral Code System
+- ✅ **Unique Referral Codes** - Each user gets unique code (not user ID)
+- ✅ **Code Generator** - Auto-generates memorable codes
+- ✅ **Sponsor Info Display** - Shows sponsor name and code
+- ✅ **QR Code Generation** - Google Charts API integration
+- ✅ **QR Code Download** - One-click download functionality
+- ✅ **Copy Code Button** - Quick copy referral code
+- ✅ **Session Tracking** - Tracks referrals via session/cookie
+
+### Added - 3D Modern Design
+- ✅ **Glassmorphism Effects** - Modern frosted glass UI
+- ✅ **3D Card Transforms** - Perspective and rotation effects
+- ✅ **Gradient Buttons** - Smooth gradient animations
+- ✅ **Shadow Depth** - Multi-layer shadows for depth
+- ✅ **Smooth Transitions** - Cubic bezier animations
+- ✅ **Hover Effects** - Interactive 3D transformations
+
+### Changed - Portal UI
+- 🔄 **Header Layout** - Improved mobile-friendly header
+- 🔄 **Button Icons** - Added icons for better UX
+- 🔄 **Network Tab** - Complete redesign with code/QR display
+- 🔄 **Sidebar Navigation** - Mobile slide-in behavior
+- 🔄 **Card Layouts** - Responsive grid systems
+
+### Technical Implementation
+- New Referral class for code management
+- Google Charts API for QR codes
+- CSS3 transforms and animations
+- Mobile-first CSS approach
+- Session and cookie-based tracking
+- Touch event optimizations
+
+### Known Limitations
+- Landing Page Builder - Planned for v1.7.0
+- Admin Approval System - Planned for v1.7.0
+
 ## [1.5.0] - 2024-01-23
 
 ### ✨ New Features - Portal Customization & Rank Management
