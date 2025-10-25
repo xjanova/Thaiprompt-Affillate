@@ -338,7 +338,7 @@ class Thaiprompt_MLM_Commission {
                 SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) as pending,
                 SUM(CASE WHEN commission_type LIKE 'level%%' THEN amount ELSE 0 END) as level_commissions,
                 SUM(CASE WHEN commission_type = 'fast_start' THEN amount ELSE 0 END) as fast_start,
-                SUM(CASE WHEN commission_type = 'binary' THEN amount ELSE 0 END) as binary,
+                SUM(CASE WHEN commission_type = 'binary' THEN amount ELSE 0 END) as `binary_commission`,
                 SUM(CASE WHEN commission_type = 'rank_bonus' THEN amount ELSE 0 END) as rank_bonus,
                 COUNT(*) as total_transactions
             FROM $table WHERE user_id = %d",
@@ -350,7 +350,7 @@ class Thaiprompt_MLM_Commission {
             'pending' => floatval($summary->pending ?? 0),
             'level_commissions' => floatval($summary->level_commissions ?? 0),
             'fast_start' => floatval($summary->fast_start ?? 0),
-            'binary' => floatval($summary->binary ?? 0),
+            'binary' => floatval($summary->binary_commission ?? 0),
             'rank_bonus' => floatval($summary->rank_bonus ?? 0),
             'total_transactions' => intval($summary->total_transactions ?? 0)
         );
