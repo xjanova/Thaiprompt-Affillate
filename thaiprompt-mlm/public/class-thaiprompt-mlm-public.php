@@ -133,7 +133,10 @@ class Thaiprompt_MLM_Public {
      * AJAX: Save landing page
      */
     public function ajax_save_landing_page() {
-        check_ajax_referer('mlm_save_landing_page', 'mlm_landing_nonce');
+        // ตรวจสอบ nonce จาก form (ไม่ใช่จาก localize)
+        if (!isset($_POST['mlm_landing_nonce']) || !wp_verify_nonce($_POST['mlm_landing_nonce'], 'mlm_save_landing_page')) {
+            wp_send_json_error(array('message' => __('Security check failed', 'thaiprompt-mlm')));
+        }
 
         if (!is_user_logged_in()) {
             wp_send_json_error(array('message' => __('Please log in', 'thaiprompt-mlm')));
@@ -213,12 +216,23 @@ class Thaiprompt_MLM_Public {
         }
 
         if ($result !== false) {
+            Thaiprompt_MLM_Logger::info('Landing page saved', array(
+                'user_id' => $user_id,
+                'landing_id' => $landing_id,
+                'title' => $data['title']
+            ));
+
             wp_send_json_success(array(
                 'message' => __('Landing page saved and submitted for approval!', 'thaiprompt-mlm'),
                 'landing_id' => $landing_id,
                 'redirect' => true
             ));
         } else {
+            Thaiprompt_MLM_Logger::error('Failed to save landing page', array(
+                'user_id' => $user_id,
+                'error' => $wpdb->last_error
+            ));
+
             wp_send_json_error(array('message' => __('Failed to save landing page', 'thaiprompt-mlm')));
         }
     }

@@ -139,8 +139,8 @@ class Thaiprompt_MLM_Referral {
     public static function get_qr_code_url($user_id, $size = 300) {
         $referral_link = self::get_referral_link($user_id);
 
-        // Use Google Charts API for QR Code generation
-        $qr_url = 'https://chart.googleapis.com/chart?chs=' . $size . 'x' . $size . '&cht=qr&chl=' . urlencode($referral_link) . '&choe=UTF-8';
+        // Use QR Server API (free, reliable alternative to Google Charts)
+        $qr_url = 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size . '&data=' . urlencode($referral_link) . '&format=png';
 
         return $qr_url;
     }
