@@ -52,7 +52,9 @@ class Thaiprompt_MLM_Wallet_Topup {
         $product->set_regular_price($amount);
         $product->set_virtual(true); // Virtual product
         $product->set_catalog_visibility('hidden'); // Hide from catalog
-        $product->set_status('private'); // Private status
+        $product->set_status('publish'); // Must be publish to allow purchase
+        $product->set_sold_individually(true); // Only 1 per order
+        $product->set_manage_stock(false); // No stock management
 
         // Add meta to identify as wallet product
         $product->add_meta_data('_mlm_wallet_topup', 'yes', true);
@@ -80,7 +82,7 @@ class Thaiprompt_MLM_Wallet_Topup {
         // Search for existing product
         $args = array(
             'post_type' => 'product',
-            'post_status' => 'private',
+            'post_status' => array('publish', 'private'), // Check both statuses
             'posts_per_page' => 1,
             'meta_query' => array(
                 array(
@@ -98,6 +100,12 @@ class Thaiprompt_MLM_Wallet_Topup {
         $products = get_posts($args);
 
         if (!empty($products)) {
+            // If found but is private, update to publish
+            $product = wc_get_product($products[0]->ID);
+            if ($product && $product->get_status() === 'private') {
+                $product->set_status('publish');
+                $product->save();
+            }
             return $products[0]->ID;
         }
 
@@ -283,42 +291,107 @@ class Thaiprompt_MLM_Wallet_Topup {
     }
 
     /**
-     * Get wallet top-up amounts (from settings or default)
+     * Get wallet top-up data (amounts with colors)
+     */
+    public static function get_topup_data() {
+        $data = get_option('thaiprompt_mlm_topup_data', array());
+
+        // If empty or old format, convert/use defaults
+        if (empty($data)) {
+            // Check for old format
+            $old_amounts = get_option('thaiprompt_mlm_topup_amounts', array());
+
+            if (!empty($old_amounts)) {
+                // Convert old format to new
+                $colors = array('#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4');
+                $data = array();
+                foreach ($old_amounts as $index => $amount) {
+                    $data[] = array(
+                        'amount' => $amount,
+                        'color' => isset($colors[$index]) ? $colors[$index] : '#10b981'
+                    );
+                }
+            } else {
+                // Use defaults
+                $data = array(
+                    array('amount' => 100, 'color' => '#10b981'),
+                    array('amount' => 500, 'color' => '#3b82f6'),
+                    array('amount' => 1000, 'color' => '#8b5cf6'),
+                    array('amount' => 2000, 'color' => '#f59e0b'),
+                    array('amount' => 5000, 'color' => '#ef4444'),
+                    array('amount' => 10000, 'color' => '#06b6d4')
+                );
+            }
+        }
+
+        return apply_filters('thaiprompt_mlm_wallet_topup_data', $data);
+    }
+
+    /**
+     * Get wallet top-up amounts (from settings or default) - backward compatibility
      */
     public static function get_topup_amounts() {
-        $amounts = get_option('thaiprompt_mlm_topup_amounts', array());
+        $data = self::get_topup_data();
+        $amounts = array();
 
-        // If empty, use defaults
-        if (empty($amounts)) {
-            $amounts = array(100, 500, 1000, 2000, 5000, 10000);
+        foreach ($data as $item) {
+            $amounts[] = isset($item['amount']) ? $item['amount'] : $item;
         }
 
         return apply_filters('thaiprompt_mlm_wallet_topup_amounts', $amounts);
     }
 
     /**
-     * Save wallet top-up amounts
+     * Save wallet top-up data (amounts with colors)
      */
-    public static function save_topup_amounts($amounts) {
-        // Clean and validate amounts
-        $clean_amounts = array();
-        foreach ($amounts as $amount) {
-            $amount = floatval($amount);
+    public static function save_topup_data($data) {
+        // Clean and validate data
+        $clean_data = array();
+        foreach ($data as $item) {
+            $amount = isset($item['amount']) ? floatval($item['amount']) : 0;
+            $color = isset($item['color']) ? sanitize_hex_color($item['color']) : '#10b981';
+
             if ($amount > 0) {
-                $clean_amounts[] = $amount;
+                $clean_data[] = array(
+                    'amount' => $amount,
+                    'color' => $color ? $color : '#10b981'
+                );
             }
         }
 
-        // Sort amounts
-        sort($clean_amounts);
+        // Sort by amount
+        usort($clean_data, function($a, $b) {
+            return $a['amount'] <=> $b['amount'];
+        });
 
         // Save
-        update_option('thaiprompt_mlm_topup_amounts', $clean_amounts);
+        update_option('thaiprompt_mlm_topup_data', $clean_data);
 
         // Auto-create products for new amounts
         self::create_all_wallet_products();
 
-        return $clean_amounts;
+        return $clean_data;
+    }
+
+    /**
+     * Save wallet top-up amounts - backward compatibility
+     */
+    public static function save_topup_amounts($amounts) {
+        // Convert to new format
+        $data = array();
+        $colors = array('#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4');
+
+        foreach ($amounts as $index => $amount) {
+            $amount = floatval($amount);
+            if ($amount > 0) {
+                $data[] = array(
+                    'amount' => $amount,
+                    'color' => isset($colors[$index]) ? $colors[$index] : '#10b981'
+                );
+            }
+        }
+
+        return self::save_topup_data($data);
     }
 
     /**
