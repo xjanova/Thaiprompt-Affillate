@@ -521,9 +521,12 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                                 <div style="color: #fff; font-size: 24px; font-weight: 700; margin-bottom: 5px;">
                                     <?php echo number_format(floatval(get_option('thaiprompt_mlm_transfer_fee_percent', 0)), 2); ?>%
                                 </div>
-                                <?php if (floatval(get_option('thaiprompt_mlm_transfer_fee_fixed', 0)) > 0): ?>
+                                <?php
+                                $transfer_fixed_fee = floatval(get_option('thaiprompt_mlm_transfer_fee_fixed', 0));
+                                if ($transfer_fixed_fee > 0):
+                                ?>
                                 <div style="color: rgba(255,255,255,0.6); font-size: 12px;">
-                                    + <?php echo wc_price(floatval(get_option('thaiprompt_mlm_transfer_fee_fixed', 0))); ?>
+                                    + ฿<?php echo number_format($transfer_fixed_fee, 2); ?>
                                 </div>
                                 <?php endif; ?>
                             </div>
@@ -532,9 +535,12 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                                 <div style="color: #fff; font-size: 24px; font-weight: 700; margin-bottom: 5px;">
                                     <?php echo number_format(floatval(get_option('thaiprompt_mlm_withdrawal_fee_percent', 0)), 2); ?>%
                                 </div>
-                                <?php if (floatval(get_option('thaiprompt_mlm_withdrawal_fee_fixed', 0)) > 0): ?>
+                                <?php
+                                $withdrawal_fixed_fee = floatval(get_option('thaiprompt_mlm_withdrawal_fee_fixed', 0));
+                                if ($withdrawal_fixed_fee > 0):
+                                ?>
                                 <div style="color: rgba(255,255,255,0.6); font-size: 12px;">
-                                    + <?php echo wc_price(floatval(get_option('thaiprompt_mlm_withdrawal_fee_fixed', 0))); ?>
+                                    + ฿<?php echo number_format($withdrawal_fixed_fee, 2); ?>
                                 </div>
                                 <?php endif; ?>
                             </div>
