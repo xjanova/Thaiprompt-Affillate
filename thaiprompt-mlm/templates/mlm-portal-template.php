@@ -41,6 +41,11 @@ $commission_stats = Thaiprompt_MLM_Commission::get_commission_summary($user_id);
 $wallet = Thaiprompt_MLM_Wallet::get_balance($user_id);
 $transactions = Thaiprompt_MLM_Wallet::get_transactions($user_id, array('limit' => 10));
 
+// Get user's landing page
+global $wpdb;
+$landing_pages_table = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
+$landing_page = $wpdb->get_row($wpdb->prepare("SELECT * FROM $landing_pages_table WHERE user_id = %d ORDER BY id DESC LIMIT 1", $user_id));
+
 // Enqueue portal assets
 wp_enqueue_style('thaiprompt-mlm-portal', THAIPROMPT_MLM_PLUGIN_URL . 'public/css/thaiprompt-mlm-portal.css', array(), THAIPROMPT_MLM_VERSION);
 wp_enqueue_script('thaiprompt-mlm-portal', THAIPROMPT_MLM_PLUGIN_URL . 'public/js/thaiprompt-mlm-portal.js', array('jquery'), THAIPROMPT_MLM_VERSION, true);
@@ -142,6 +147,12 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                         <a href="#rank" class="mlm-portal-nav-link" data-tab="rank">
                             <span class="mlm-portal-nav-icon">🏆</span>
                             <span><?php _e('Rank Progress', 'thaiprompt-mlm'); ?></span>
+                        </a>
+                    </li>
+                    <li class="mlm-portal-nav-item">
+                        <a href="#landing" class="mlm-portal-nav-link" data-tab="landing">
+                            <span class="mlm-portal-nav-icon">🎨</span>
+                            <span><?php _e('My Landing Page', 'thaiprompt-mlm'); ?></span>
                         </a>
                     </li>
                 </ul>
@@ -623,6 +634,230 @@ wp_localize_script('thaiprompt-mlm-portal', 'thaipromptMLM', array(
                         </p>
                     </div>
                     <?php endif; ?>
+                </div>
+
+                <!-- Landing Page Builder Tab -->
+                <div class="mlm-portal-tab-content" data-tab-content="landing">
+                    <h2 style="color: #fff; margin-bottom: 30px; font-size: 32px;">
+                        🎨 <?php _e('My Landing Page', 'thaiprompt-mlm'); ?>
+                    </h2>
+
+                    <?php if ($landing_page): ?>
+                        <?php
+                        $status_badges = array(
+                            'pending' => array('color' => '#f59e0b', 'text' => 'Pending Approval'),
+                            'approved' => array('color' => '#10b981', 'text' => 'Approved'),
+                            'rejected' => array('color' => '#ef4444', 'text' => 'Rejected')
+                        );
+                        $current_status = $status_badges[$landing_page->status] ?? $status_badges['pending'];
+                        $landing_url = add_query_arg('ref', $referral_code, home_url('landing/' . $landing_page->id));
+                        ?>
+
+                        <!-- Status Card -->
+                        <div class="mlm-glass-card" style="margin-bottom: 30px; padding: 25px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                                <div>
+                                    <h3 style="color: #fff; margin-bottom: 10px;"><?php echo esc_html($landing_page->title); ?></h3>
+                                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                        <span style="padding: 6px 15px; border-radius: 20px; background: <?php echo esc_attr($current_status['color']); ?>; color: #fff; font-size: 13px; font-weight: 600;">
+                                            <?php echo esc_html($current_status['text']); ?>
+                                        </span>
+                                        <?php if ($landing_page->status === 'approved' && $landing_page->is_active): ?>
+                                            <span style="color: rgba(255,255,255,0.7); font-size: 14px;">
+                                                👁️ <?php echo number_format($landing_page->views); ?> views | 🎯 <?php echo number_format($landing_page->conversions); ?> conversions
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <?php if ($landing_page->status === 'approved' && $landing_page->is_active): ?>
+                                        <a href="<?php echo esc_url($landing_url); ?>" target="_blank" class="mlm-portal-btn" style="background: linear-gradient(135deg, #10b981, #059669);">
+                                            👁️ <?php _e('View Page', 'thaiprompt-mlm'); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                    <button class="mlm-portal-btn mlm-edit-landing-btn">
+                                        ✏️ <?php _e('Edit', 'thaiprompt-mlm'); ?>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <?php if ($landing_page->status === 'rejected' && $landing_page->admin_notes): ?>
+                                <div style="margin-top: 20px; padding: 15px; background: rgba(239, 68, 68, 0.2); border-left: 4px solid #ef4444; border-radius: 8px;">
+                                    <div style="color: #fff; font-weight: 600; margin-bottom: 5px;">❌ <?php _e('Rejection Reason:', 'thaiprompt-mlm'); ?></div>
+                                    <div style="color: rgba(255,255,255,0.9);"><?php echo nl2br(esc_html($landing_page->admin_notes)); ?></div>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Share Section (only for approved pages) -->
+                        <?php if ($landing_page->status === 'approved' && $landing_page->is_active): ?>
+                        <div class="mlm-glass-card" style="margin-bottom: 30px; padding: 25px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.1));">
+                            <h3 style="color: #fff; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                                🔗 <?php _e('Share Your Landing Page', 'thaiprompt-mlm'); ?>
+                            </h3>
+
+                            <div style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                                <label style="color: rgba(255,255,255,0.8); display: block; margin-bottom: 10px; font-size: 14px;">
+                                    <?php _e('Your Landing Page URL:', 'thaiprompt-mlm'); ?>
+                                </label>
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                    <input type="text" readonly value="<?php echo esc_attr($landing_url); ?>" id="mlm-landing-url-input"
+                                        style="flex: 1; min-width: 250px; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.2); border-radius: 12px; color: #fff; font-size: 14px; font-family: monospace;">
+                                    <button type="button" class="mlm-portal-btn mlm-copy-landing-url" data-url="<?php echo esc_attr($landing_url); ?>"
+                                        style="background: linear-gradient(135deg, #10b981, #059669); white-space: nowrap;">
+                                        📋 <?php _e('Copy URL', 'thaiprompt-mlm'); ?>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
+                                <button type="button" class="mlm-share-landing" data-platform="facebook" data-url="<?php echo esc_attr($landing_url); ?>"
+                                    style="padding: 12px 16px; background: #1877f2; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                    📘 Facebook
+                                </button>
+                                <button type="button" class="mlm-share-landing" data-platform="twitter" data-url="<?php echo esc_attr($landing_url); ?>"
+                                    style="padding: 12px 16px; background: #1da1f2; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                    🐦 Twitter
+                                </button>
+                                <button type="button" class="mlm-share-landing" data-platform="line" data-url="<?php echo esc_attr($landing_url); ?>"
+                                    style="padding: 12px 16px; background: #00B900; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                    💬 LINE
+                                </button>
+                                <button type="button" class="mlm-share-landing" data-platform="whatsapp" data-url="<?php echo esc_attr($landing_url); ?>"
+                                    style="padding: 12px 16px; background: #25D366; color: #fff; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                                    📱 WhatsApp
+                                </button>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Preview Card -->
+                        <div class="mlm-glass-card" style="margin-bottom: 30px;">
+                            <h3 style="color: #fff; margin-bottom: 20px;">📱 <?php _e('Preview', 'thaiprompt-mlm'); ?></h3>
+                            <div style="background: rgba(255,255,255,0.05); border-radius: 15px; padding: 30px;">
+                                <h2 style="color: #fff; font-size: 28px; margin-bottom: 15px;"><?php echo esc_html($landing_page->headline); ?></h2>
+                                <p style="color: rgba(255,255,255,0.8); font-size: 16px; line-height: 1.6; margin-bottom: 25px;"><?php echo nl2br(esc_html($landing_page->description)); ?></p>
+
+                                <?php if ($landing_page->image1_url || $landing_page->image2_url || $landing_page->image3_url): ?>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                                        <?php if ($landing_page->image1_url): ?>
+                                            <img src="<?php echo esc_url($landing_page->image1_url); ?>" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px;">
+                                        <?php endif; ?>
+                                        <?php if ($landing_page->image2_url): ?>
+                                            <img src="<?php echo esc_url($landing_page->image2_url); ?>" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px;">
+                                        <?php endif; ?>
+                                        <?php if ($landing_page->image3_url): ?>
+                                            <img src="<?php echo esc_url($landing_page->image3_url); ?>" style="width: 100%; height: 200px; object-fit: cover; border-radius: 12px;">
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endif; ?>
+
+                                <button style="padding: 15px 40px; background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: #fff; border: none; border-radius: 50px; font-size: 18px; font-weight: 600; cursor: not-allowed;">
+                                    <?php echo esc_html($landing_page->cta_text); ?>
+                                </button>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <!-- Landing Page Form -->
+                    <div class="mlm-glass-card mlm-landing-page-form" <?php echo $landing_page ? 'style="display: none;"' : ''; ?>>
+                        <h3 style="color: #fff; margin-bottom: 25px;">
+                            <?php echo $landing_page ? '✏️ ' . __('Edit Landing Page', 'thaiprompt-mlm') : '✨ ' . __('Create Landing Page', 'thaiprompt-mlm'); ?>
+                        </h3>
+
+                        <form id="mlm-landing-page-form" enctype="multipart/form-data">
+                            <?php wp_nonce_field('mlm_save_landing_page', 'mlm_landing_nonce'); ?>
+                            <input type="hidden" name="action" value="mlm_save_landing_page">
+                            <input type="hidden" name="landing_id" value="<?php echo $landing_page ? $landing_page->id : ''; ?>">
+
+                            <!-- Title -->
+                            <div style="margin-bottom: 25px;">
+                                <label style="color: #fff; display: block; margin-bottom: 8px; font-weight: 600;">
+                                    <?php _e('Page Title', 'thaiprompt-mlm'); ?> <span style="color: #ef4444;">*</span>
+                                </label>
+                                <input type="text" name="title" class="mlm-portal-input" value="<?php echo $landing_page ? esc_attr($landing_page->title) : ''; ?>" required
+                                    style="width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 12px; color: #fff; font-size: 15px;"
+                                    placeholder="<?php _e('e.g., Join Our Team Today!', 'thaiprompt-mlm'); ?>">
+                            </div>
+
+                            <!-- Headline -->
+                            <div style="margin-bottom: 25px;">
+                                <label style="color: #fff; display: block; margin-bottom: 8px; font-weight: 600;">
+                                    <?php _e('Headline', 'thaiprompt-mlm'); ?> <span style="color: #ef4444;">*</span>
+                                </label>
+                                <textarea name="headline" rows="2" class="mlm-portal-input" required
+                                    style="width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 12px; color: #fff; font-size: 15px; resize: vertical;"
+                                    placeholder="<?php _e('Catchy headline here...', 'thaiprompt-mlm'); ?>"><?php echo $landing_page ? esc_textarea($landing_page->headline) : ''; ?></textarea>
+                            </div>
+
+                            <!-- Description -->
+                            <div style="margin-bottom: 25px;">
+                                <label style="color: #fff; display: block; margin-bottom: 8px; font-weight: 600;">
+                                    <?php _e('Description', 'thaiprompt-mlm'); ?> <span style="color: #ef4444;">*</span>
+                                </label>
+                                <textarea name="description" rows="6" class="mlm-portal-input" required
+                                    style="width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 12px; color: #fff; font-size: 15px; resize: vertical;"
+                                    placeholder="<?php _e('Tell your story and why someone should join...', 'thaiprompt-mlm'); ?>"><?php echo $landing_page ? esc_textarea($landing_page->description) : ''; ?></textarea>
+                            </div>
+
+                            <!-- Images -->
+                            <div style="margin-bottom: 25px;">
+                                <label style="color: #fff; display: block; margin-bottom: 8px; font-weight: 600;">
+                                    <?php _e('Images (Max 3)', 'thaiprompt-mlm'); ?>
+                                </label>
+                                <p style="color: rgba(255,255,255,0.6); font-size: 13px; margin-bottom: 12px;">
+                                    <?php _e('Upload up to 3 images. Recommended size: 1200x600px', 'thaiprompt-mlm'); ?>
+                                </p>
+
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                    <?php for ($i = 1; $i <= 3; $i++): ?>
+                                        <div>
+                                            <input type="file" name="image<?php echo $i; ?>" accept="image/*" class="mlm-image-upload"
+                                                style="width: 100%; padding: 10px; background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,255,255,0.3); border-radius: 12px; color: #fff; font-size: 13px;">
+                                            <?php if ($landing_page && $landing_page->{"image{$i}_url"}): ?>
+                                                <div style="margin-top: 10px;">
+                                                    <img src="<?php echo esc_url($landing_page->{"image{$i}_url"}); ?>" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px;">
+                                                    <label style="display: block; margin-top: 5px; color: rgba(255,255,255,0.7); font-size: 12px;">
+                                                        <input type="checkbox" name="remove_image<?php echo $i; ?>" value="1">
+                                                        <?php _e('Remove this image', 'thaiprompt-mlm'); ?>
+                                                    </label>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endfor; ?>
+                                </div>
+                            </div>
+
+                            <!-- CTA Text -->
+                            <div style="margin-bottom: 25px;">
+                                <label style="color: #fff; display: block; margin-bottom: 8px; font-weight: 600;">
+                                    <?php _e('Call-to-Action Button Text', 'thaiprompt-mlm'); ?>
+                                </label>
+                                <input type="text" name="cta_text" class="mlm-portal-input" value="<?php echo $landing_page ? esc_attr($landing_page->cta_text) : 'Join Now'; ?>"
+                                    style="width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 12px; color: #fff; font-size: 15px;"
+                                    placeholder="<?php _e('e.g., Join Now, Get Started, Sign Up', 'thaiprompt-mlm'); ?>">
+                            </div>
+
+                            <!-- Notice -->
+                            <div style="background: rgba(245, 158, 11, 0.2); border-left: 4px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+                                <div style="color: #fff; font-size: 14px;">
+                                    ⚠️ <?php _e('Your landing page will be submitted for admin approval before going live.', 'thaiprompt-mlm'); ?>
+                                </div>
+                            </div>
+
+                            <!-- Submit Buttons -->
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <button type="submit" class="mlm-portal-btn" style="flex: 1; min-width: 200px;">
+                                    💾 <?php _e('Save & Submit for Approval', 'thaiprompt-mlm'); ?>
+                                </button>
+                                <?php if ($landing_page): ?>
+                                    <button type="button" class="mlm-portal-btn mlm-cancel-edit-btn" style="background: rgba(255,255,255,0.2);">
+                                        ✖️ <?php _e('Cancel', 'thaiprompt-mlm'); ?>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </form>
+                    </div>
                 </div>
 
             </main>

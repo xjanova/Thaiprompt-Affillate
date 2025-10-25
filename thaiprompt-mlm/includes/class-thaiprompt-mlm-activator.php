@@ -209,6 +209,34 @@ class Thaiprompt_MLM_Activator {
         ) $charset_collate;";
         dbDelta($sql_withdrawals);
 
+        // Landing Pages table
+        $table_landing_pages = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
+        $sql_landing_pages = "CREATE TABLE $table_landing_pages (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            user_id bigint(20) NOT NULL,
+            title varchar(255) NOT NULL,
+            headline text,
+            description longtext,
+            image1_url varchar(500) DEFAULT NULL,
+            image2_url varchar(500) DEFAULT NULL,
+            image3_url varchar(500) DEFAULT NULL,
+            cta_text varchar(100) DEFAULT 'Join Now',
+            status varchar(20) DEFAULT 'pending',
+            admin_notes text,
+            views bigint(20) DEFAULT 0,
+            conversions bigint(20) DEFAULT 0,
+            is_active tinyint(1) DEFAULT 0,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            approved_at datetime DEFAULT NULL,
+            approved_by bigint(20) DEFAULT NULL,
+            PRIMARY KEY  (id),
+            KEY user_id (user_id),
+            KEY status (status),
+            KEY is_active (is_active)
+        ) $charset_collate;";
+        dbDelta($sql_landing_pages);
+
         // Update database version
         update_option('thaiprompt_mlm_db_version', THAIPROMPT_MLM_DB_VERSION);
     }

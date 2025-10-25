@@ -13,6 +13,12 @@ class Thaiprompt_MLM_Public {
 
         // Register AJAX handlers
         add_action('wp_ajax_thaiprompt_mlm_get_genealogy_public', array($this, 'ajax_get_genealogy'));
+        add_action('wp_ajax_mlm_save_landing_page', array($this, 'ajax_save_landing_page'));
+
+        // Landing page URL routing
+        add_action('init', array($this, 'register_landing_page_rewrite'));
+        add_filter('query_vars', array($this, 'register_landing_page_query_vars'));
+        add_action('template_redirect', array($this, 'handle_landing_page_request'));
     }
 
     /**
@@ -120,6 +126,168 @@ class Thaiprompt_MLM_Public {
             wp_send_json_success($tree);
         } else {
             wp_send_json_error(array('message' => __('No data found', 'thaiprompt-mlm')));
+        }
+    }
+
+    /**
+     * AJAX: Save landing page
+     */
+    public function ajax_save_landing_page() {
+        check_ajax_referer('mlm_save_landing_page', 'mlm_landing_nonce');
+
+        if (!is_user_logged_in()) {
+            wp_send_json_error(array('message' => __('Please log in', 'thaiprompt-mlm')));
+        }
+
+        $user_id = get_current_user_id();
+        $landing_id = isset($_POST['landing_id']) ? intval($_POST['landing_id']) : 0;
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
+
+        // Verify ownership if editing
+        if ($landing_id > 0) {
+            $existing = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d AND user_id = %d", $landing_id, $user_id));
+            if (!$existing) {
+                wp_send_json_error(array('message' => __('Landing page not found', 'thaiprompt-mlm')));
+            }
+        }
+
+        // Prepare data
+        $data = array(
+            'user_id' => $user_id,
+            'title' => sanitize_text_field($_POST['title']),
+            'headline' => sanitize_textarea_field($_POST['headline']),
+            'description' => sanitize_textarea_field($_POST['description']),
+            'cta_text' => sanitize_text_field($_POST['cta_text']),
+            'status' => 'pending', // Always pending when saving
+            'is_active' => 0
+        );
+
+        // Handle image uploads (max 3)
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
+
+        for ($i = 1; $i <= 3; $i++) {
+            $file_key = 'image' . $i;
+
+            // Check if removing existing image
+            if (isset($_POST['remove_image' . $i]) && $_POST['remove_image' . $i]) {
+                $data['image' . $i . '_url'] = null;
+                continue;
+            }
+
+            // Check if new image uploaded
+            if (!empty($_FILES[$file_key]['name'])) {
+                $file = $_FILES[$file_key];
+
+                // Validate image
+                $allowed_types = array('image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp');
+                if (!in_array($file['type'], $allowed_types)) {
+                    wp_send_json_error(array('message' => sprintf(__('Image %d must be a valid image format', 'thaiprompt-mlm'), $i)));
+                }
+
+                // Check file size (max 5MB)
+                if ($file['size'] > 5 * 1024 * 1024) {
+                    wp_send_json_error(array('message' => sprintf(__('Image %d must be less than 5MB', 'thaiprompt-mlm'), $i)));
+                }
+
+                // Upload file
+                $upload = wp_handle_upload($file, array('test_form' => false));
+
+                if (isset($upload['error'])) {
+                    wp_send_json_error(array('message' => $upload['error']));
+                }
+
+                $data['image' . $i . '_url'] = $upload['url'];
+            }
+        }
+
+        // Save or update
+        if ($landing_id > 0) {
+            $result = $wpdb->update($table, $data, array('id' => $landing_id, 'user_id' => $user_id));
+        } else {
+            $result = $wpdb->insert($table, $data);
+            $landing_id = $wpdb->insert_id;
+        }
+
+        if ($result !== false) {
+            wp_send_json_success(array(
+                'message' => __('Landing page saved and submitted for approval!', 'thaiprompt-mlm'),
+                'landing_id' => $landing_id,
+                'redirect' => true
+            ));
+        } else {
+            wp_send_json_error(array('message' => __('Failed to save landing page', 'thaiprompt-mlm')));
+        }
+    }
+
+    /**
+     * Register landing page rewrite rules
+     */
+    public function register_landing_page_rewrite() {
+        // URL format: /landing/{id}
+        add_rewrite_rule(
+            '^landing/([0-9]+)/?$',
+            'index.php?landing_id=$matches[1]',
+            'top'
+        );
+
+        // URL format: /landing/{username}
+        add_rewrite_rule(
+            '^landing/([^/]+)/?$',
+            'index.php?landing_username=$matches[1]',
+            'top'
+        );
+    }
+
+    /**
+     * Register landing page query vars
+     */
+    public function register_landing_page_query_vars($vars) {
+        $vars[] = 'landing_id';
+        $vars[] = 'landing_username';
+        return $vars;
+    }
+
+    /**
+     * Handle landing page template requests
+     */
+    public function handle_landing_page_request() {
+        $landing_id = get_query_var('landing_id', 0);
+        $landing_username = get_query_var('landing_username', '');
+
+        // If username is provided, get the active landing page for that user
+        if ($landing_username && !$landing_id) {
+            $user = get_user_by('login', $landing_username);
+            if (!$user) {
+                $user = get_user_by('slug', $landing_username);
+            }
+
+            if ($user) {
+                global $wpdb;
+                $table = $wpdb->prefix . 'thaiprompt_mlm_landing_pages';
+
+                $landing_page = $wpdb->get_row($wpdb->prepare(
+                    "SELECT id FROM $table WHERE user_id = %d AND status = 'approved' AND is_active = 1 ORDER BY created_at DESC LIMIT 1",
+                    $user->ID
+                ));
+
+                if ($landing_page) {
+                    $landing_id = $landing_page->id;
+                    set_query_var('landing_id', $landing_id);
+                }
+            }
+        }
+
+        // If we have a landing_id, load the template
+        if ($landing_id) {
+            $template = THAIPROMPT_MLM_PLUGIN_DIR . 'templates/landing-page-template.php';
+            if (file_exists($template)) {
+                include $template;
+                exit;
+            }
         }
     }
 }
